@@ -1,4 +1,4 @@
-# ham_docker_container
+# APRS Docker containers
 
 Docker containers for running APRS on ham radio
 
@@ -18,9 +18,10 @@ To shell into the container: `docker container run --env-file ./../.env -p 8010:
 
 Run from the root directory.
 
-To build the container: `docker compose build`
+To build and run the container
 
-To run: `docker compose up`
+`docker compose build` \
+`docker compose up` 
 
 ## Settings
 
@@ -34,4 +35,48 @@ The `direwolf\start_direwolf.sh` contains no hardcoded values, but contains defa
 
 The `direwolf\direwolf.conf` contains default values for direwolf, but settings like call sign and ports are substituted based on the `.env` configuration, during container run, as part of running `start_direwolf.sh`.
 
+## Linux host machine configuration
 
+Follow the Settings section for the initial configuration. 
+
+The Linux system requires minimal configuration, as our container handles it.
+
+### Raspberry Pi 4 with Rasphbian
+
+Below is an example configuration done to setup the Docker APRS container to run on a fresh install Raspberry Pi.
+
+Setup the system for first time use. Install minimal dependencies.
+
+`sudo apt-get update`\
+`sudo apt-get install git`
+
+Install Docker, if on Rasphbian, according to official Docker documentation https://docs.docker.com/engine/install/debian/#install-using-the-convenience-script.
+
+`curl -fsSL https://get.docker.com -o get-docker.sh`\
+`sudo sh ./get-docker.sh --dry-run`
+
+Configure Docker for rootless use according to official Docker documentation https://docs.docker.com/engine/security/rootless/.
+
+`sudo sh -eux <<EOF` \
+`apt-get install -y uidmap` \
+`EOF`\
+`dockerd-rootless-setuptool.sh install`
+                   
+Clone the container repo and run Docker.
+
+`git clone https://github.com/iontodirel/ham_docker_container`\
+`cd ham_docker_container`\
+
+Set your callsign in the `.env` file, before running Docker. Creating the container will take a few minutes for the first time.
+
+`docker compose up`
+
+## Resilience
+
+- The audio soudcard can be connected to any USB port.
+- In case of a USB disconnect, Docker will automatically handle container restart.
+- In case of Direwolf crashes, or other failures Docker will automatically handle container restart.
+
+## Connecting APRS clients
+
+The APRS containers expose ports `8010` and `8020` for AGWP and KISS use.
