@@ -1,0 +1,15 @@
+services:
+  direwolf:
+    env_file:
+      - .env
+    build: ./direwolf
+    image: direwolf
+    expose:
+      - ${DIREWOLF_HOST_AGWP_PORT}
+      - ${DIREWOLF_HOST_KISS_PORT}
+    ports:
+      - "${DIREWOLF_HOST_AGWP_PORT}:${DIREWOLF_CONTAINER_AGWP_PORT}"
+      - "${DIREWOLF_HOST_KISS_PORT}:${DIREWOLF_CONTAINER_KISS_PORT}"
+    devices:
+      - /dev/snd
+    restart: unless-stopped
