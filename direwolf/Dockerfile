@@ -13,7 +13,6 @@ RUN make -j 4
 
 RUN mkdir /direwolf
 WORKDIR /direwolf
-COPY ./config.json config.json
 COPY ./start_direwolf.sh start_direwolf.sh
 COPY ./direwolf.conf direwolf.conf
 RUN chmod +x start_direwolf.sh
