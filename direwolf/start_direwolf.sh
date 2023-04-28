@@ -1,8 +1,7 @@
 #!/bin/sh
 
 # find alsa sound card
-# set configuration for Signalink USB Audio Card
-usb_device=$(/find_devices/find_devices --list --name "USB Audio" --desc "Texas Instruments" --type "playback&capture" --no-verbose)
+usb_device=$(/find_devices/find_devices --list --name "$AUDIO_USB_NAME" --desc "$AUDIO_USB_DESC" --type "playback&capture" --no-verbose)
 exit_code=$?
 
 # exit if could not find usb device
@@ -17,32 +16,24 @@ then
     exit 1
 fi
 
-config_file="config.json"
-
-# direwolf.conf file settings
-direwolf_config_file=$(jq -r '.direwolf_config_file' $config_file)
-mycall=$(jq -r '.mycall' $config_file)
-awgp_port=$(jq -r '.awgp_port' $config_file)
-kiss_port=$(jq -r '.kiss_port' $config_file)
-
 # if config file does not exist then exit
-if ! test -f "$direwolf_config_file"
+if ! test -f "$DIREWOLF_CONFIG_FILE"
 then
     echo "No config file found $direwolf_config_file"
     exit 1
 fi
 
 # replace soundard id in direwolf.conf file
-sed -i "s/ADEVICE.*/ADEVICE $usb_device/" $direwolf_config_file
+sed -i "s/ADEVICE.*/ADEVICE $usb_device/" $DIREWOLF_CONFIG_FILE
 
 # replace callsign in direwolf.conf file
-sed -i "s/MYCALL.*/MYCALL $mycall/" $direwolf_config_file
+sed -i "s/MYCALL.*/MYCALL $MYCALL/" $DIREWOLF_CONFIG_FILE
 
 # replace AGWPORT and KISSPORT in direwolf.conf file
-sed -i "s/AGWPORT.*/AGWPORT $awgp_port/" $direwolf_config_file
-sed -i "s/KISSPORT.*/KISSPORT $kiss_port/" $direwolf_config_file
+sed -i "s/AGWPORT.*/AGWPORT $DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_CONFIG_FILE
+sed -i "s/KISSPORT.*/KISSPORT $DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_FILE
 
 # start direwolf
-echo "Starting direwolf"
+echo "Starting direwolf with callsign '$MYCALL', device '$usb_device', and ports '$DIREWOLF_CONTAINER_AGWP_PORT', '$DIREWOLF_CONTAINER_KISS_PORT'"
 
-/usr/bin/direwolf -t 0 -p -a 10 -c $direwolf_config_file -l .
+/usr/bin/direwolf -t 0 -p -a 10 -c $DIREWOLF_CONFIG_FILE -l .
