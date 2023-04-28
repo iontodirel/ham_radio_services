@@ -39,7 +39,7 @@ The `direwolf\direwolf.conf` contains default values for direwolf, but settings 
 
 Follow the Settings section for the initial configuration. 
 
-The Linux system requires minimal configuration, as our container handles it.
+The Linux system requires minimal configuration, as our container handles it. The only real requirements are `git` and `Docker`.
 
 ### Raspberry Pi 4 with Rasphbian
 
@@ -76,6 +76,12 @@ Set your callsign in the `.env` file, before running Docker. Creating the contai
 - The audio soudcard can be connected to any USB port.
 - In case of a USB disconnect, Docker will automatically handle container restart.
 - In case of Direwolf crashes, or other failures Docker will automatically handle container restart.
+
+## Handling Restarts
+
+Use this to start the Docker container after a system reboot
+
+TBD
 
 ## Connecting APRS clients
 
