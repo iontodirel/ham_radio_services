@@ -19,7 +19,7 @@ fi
 # if config file does not exist then exit
 if ! test -f "$DIREWOLF_CONFIG_FILE"
 then
-    echo "No config file found $direwolf_config_file"
+    echo "No config file found $DIREWOLF_CONFIG_FILE"
     exit 1
 fi
 
@@ -35,5 +35,6 @@ sed -i "s/KISSPORT.*/KISSPORT $DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_F
 
 # start direwolf
 echo "Starting direwolf with callsign '$MYCALL', device '$usb_device', and ports '$DIREWOLF_CONTAINER_AGWP_PORT', '$DIREWOLF_CONTAINER_KISS_PORT'"
+echo ""
 
 /usr/bin/direwolf -t 0 -p -a 10 -c $DIREWOLF_CONFIG_FILE -l .
