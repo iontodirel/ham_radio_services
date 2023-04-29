@@ -4,6 +4,10 @@ Docker containers for running APRS on ham radio
 
 ## Goals
 
+- Easy, fast, and painless deployment of radio services to any new Linux system
+- Repeatability
+- Reliability
+
 ## Limitations
 
 - **Only Linux is currently supported**. This work is targeted at small, cheap and compact Linux embedded devices running radio services 24/7. Windows has limitations sharing hadware to Docker containers. Mac OS support could be added in the future, but running services 24/7 on Mac systems is not considered economical for this to be a priority.
@@ -118,6 +122,10 @@ docker compose up
 ~~~~
 
 ### Ubuntu 64-bit on Generic Intel hardware
+
+TBD
+
+### Debian on Beaglebone
 
 TBD
 
