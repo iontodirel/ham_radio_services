@@ -46,9 +46,11 @@ Go to File - Configure - Export Mode, in the open modal Dialog, then go to Ports
 
 ![image](https://user-images.githubusercontent.com/30967482/235284000-a2c7125b-9de8-4977-ab19-597b2aa57b35.png)
 
-### APRSPoint
+### PinPoint
 
-TBD
+Go to Tools - Options, in the open modal Dialog, then go to TNC, set TNC Mode to network KISS mode, set IP address, and set Port to 8020, as this is a KISS TCP connection, and not AGWP.
+
+![image](https://user-images.githubusercontent.com/30967482/235284419-5b581871-4119-466f-bf70-0e30406f9846.png)
 
 ## Settings by soundcard
 
