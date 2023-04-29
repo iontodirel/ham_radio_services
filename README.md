@@ -35,11 +35,16 @@ The APRS containers expose ports `8010` and `8020` for AGWP and KISS use. If you
 
 ### Xastir
 
-TBD
+Go to Interface - Interface Control, and in the open modal Dialog, then add a new Networked AGWPE port.
+
+![image](https://user-images.githubusercontent.com/30967482/235284143-25f00a58-81ee-4848-a516-8b908d0af504.png)
+
 
 ### YAAC
 
-TBD
+Go to File - Configure - Export Mode, in the open modal Dialog, then go to Ports, add a new AGWPE port, setting the hostname and port.
+
+![image](https://user-images.githubusercontent.com/30967482/235284000-a2c7125b-9de8-4977-ab19-597b2aa57b35.png)
 
 ### APRSPoint
 
