@@ -12,18 +12,6 @@ Docker containers for running APRS on ham radio
 - **Only sound cards with built in VOX are currently supported**. This limitation comes from limitations of sharing USB serial ports to Docker. Docker can access serial ports, but it's not easily possible to identify the serial port associated with a particular Digirig for example, if your system has few. This can be make to work with additional settings, like mapping the Digirig serial port to a specific name, but doesn't out of the box if you use this project. You can modify `start_direwolf.sh` and `compose.yaml` to suit your needs.
 - **No GPIO access**. Docker can access GPIO, but this doesn't not work out of the box if you use this project. You can change `compose.yaml` to satisfy your needs and expose GPIO. Support for this out of the box might be added later.
 
-## Containers
-
-### Direwolf container
-
-Run from the direwolf directory.
-
-To build the container: `docker build -t direwolf .`
-
-To run the container: `docker container run --env-file ./../.env -p 8010:8000 -p 8020:8001 -t -d --device /dev/snd direwolf`
-
-To shell into the container: `docker container run --env-file ./../.env -p 8010:8000 -p 8020:8001 --device /dev/snd --interactive --tty --entrypoint /bin/sh direwolf`
-
 ## Running
 
 Run from the root directory.
@@ -34,6 +22,36 @@ To build and run the container
 docker compose build
 docker compose up
 ~~~~
+
+## Connecting APRS clients
+
+The APRS containers expose ports `8010` and `8020` for AGWP and KISS use. If you want to change these ports, change the the `DIREWOLF_HOST_AGWP_PORT` and `DIREWOLF_HOST_KISS_PORT` variables in the `.env` file.
+
+### Xastir
+
+TBD
+
+### YAAC
+
+TBD
+
+### APRSPoint
+
+TBD
+
+## Containers
+
+This is not really needed unless you want to debug the containers.
+
+### Direwolf container
+
+Run from the direwolf directory.
+
+To build the container: `docker build -t direwolf .`
+
+To run the container: `docker container run --env-file ./../.env -p 8010:8000 -p 8020:8001 -t -d --device /dev/snd direwolf`
+
+To shell into the container: `docker container run --env-file ./../.env -p 8010:8000 -p 8020:8001 --device /dev/snd --interactive --tty --entrypoint /bin/sh direwolf`
 
 ## Additional Settings
 
@@ -115,7 +133,3 @@ TBD
 Use this to start the Docker container after a system reboot
 
 TBD
-
-## Connecting APRS clients
-
-The APRS containers expose ports `8010` and `8020` for AGWP and KISS use.
