@@ -18,11 +18,7 @@ Docker containers for running APRS on ham radio
 
 ## Running
 
-Run from the root directory.
-
-Follow the configuration section first.
-
-To build and run the container:
+Follow the configuration section first. Run from the root directory, to build and run the container:
 
 ~~~~
 docker compose build
