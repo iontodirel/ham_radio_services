@@ -12,4 +12,4 @@ services:
       - "${DIREWOLF_HOST_KISS_PORT}:${DIREWOLF_CONTAINER_KISS_PORT}"
     devices:
       - /dev/snd
-    restart: unless-stopped
+    restart: always
