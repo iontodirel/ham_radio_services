@@ -20,7 +20,9 @@ Docker containers for running APRS on ham radio
 
 Run from the root directory.
 
-To build and run the container
+Follow the 
+
+To build and run the container.
 
 ~~~~
 docker compose build
@@ -45,7 +47,7 @@ TBD
 
 ## Containers
 
-This is not really needed unless you want to debug the containers.
+Follow these details if you want to debug the containers.
 
 ### Direwolf container
 
@@ -71,29 +73,27 @@ The `direwolf\direwolf.conf` contains default values for direwolf, but settings 
 
 ## Linux host machine configuration
 
-Follow the Settings section for the initial configuration. 
-
-The Linux system requires minimal configuration, as our container handles it. The only real requirements are `git` and `Docker`.
+The Linux system requires minimal configuration, as our container handles everything. The only real requirements are `git` and `Docker`.
 
 ### Raspberry Pi 4 with Raspbian 32-bit
 
 Below is an example configuration done to setup the Docker APRS container to run on a fresh install Raspberry Pi.
 
-**1. Setup the system for first time use. Install minimal dependencies.**
+**1. Setup the system for first time use.**
 
 ~~~~
 sudo apt-get update
 sudo apt-get install git
 ~~~~
 
-**2. Install Docker, if on Rasphbian, according to official Docker documentation https://docs.docker.com/engine/install/debian/#install-using-the-convenience-script.**
+**2. Install Docker**, if on Rasphbian, according to official Docker documentation https://docs.docker.com/engine/install/debian/#install-using-the-convenience-script.
 
 ~~~~
 curl -fsSL https://get.docker.com -o get-docker.sh`
 sudo sh ./get-docker.sh --dry-run`
 ~~~~
 
-**3. Configure Docker for rootless use according to official Docker documentation https://docs.docker.com/engine/security/rootless/.**
+**3. Configure Docker for rootless use** according to official Docker documentation https://docs.docker.com/engine/security/rootless/.
 
 ~~~~
 sudo sh -eux <<EOF
@@ -102,20 +102,20 @@ EOF
 dockerd-rootless-setuptool.sh install
 ~~~~
     
-**4. Clone the container repo and run Docker.**
+**4. Clone the container repo.**
 
 ~~~~
 git clone https://github.com/iontodirel/ham_docker_container
 cd ham_docker_container
 ~~~~
 
-**5. Set your callsign in the `.env` file, before running Docker.**
+**5. Set your callsign in the `.env` file.**
 
 ~~~~
 nano .env
 ~~~~
 
-**6. Run the container. Creating the container will take a few minutes for the first time.**
+**6. Run the container.** *Creating the container will take a few minutes when done for the first time.*
 
 ~~~~
 docker compose up
@@ -141,3 +141,12 @@ TBD
 Use this to start the Docker container after a system reboot
 
 TBD
+
+## Typical architecture
+
+![image](https://user-images.githubusercontent.com/30967482/235277013-740799a8-ca05-4f43-8490-08744999b220.png)
+
+![image](https://user-images.githubusercontent.com/30967482/235277032-81deb506-e989-47af-a0c3-cab2234a729b.png)
+
+![image](https://user-images.githubusercontent.com/30967482/235277047-6f01b786-3cd2-4611-a31f-1ba90c5baadc.png)
+
