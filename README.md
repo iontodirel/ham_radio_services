@@ -139,9 +139,7 @@ TBD
 
 ## Handling Restarts
 
-Use this to start the Docker container after a system reboot
-
-TBD
+There are no needs for any hooks or scripts to run during system initialization. Docker runs automatically after boot by default, and the container policy to auto-restart, auto-restarts the container.
 
 ## Typical architecture
 
