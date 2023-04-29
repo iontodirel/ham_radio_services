@@ -148,8 +148,7 @@ There are no needs for any hooks or scripts to run during system initialization.
 
 ## Containers
 
-Follow these details if you want to debug the containers.
-
+Only follow these instructions if you want to debug the containers.
 
 ### Direwolf container
 
