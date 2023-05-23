@@ -5,8 +5,10 @@ Docker containers for running APRS on ham radio
 ## Goals
 
 - Easy, fast, and painless deployment of radio services to any new Linux system
-- Repeatability
-- Reliability
+  - Zero configuration or system alterations, only needs Docker
+- Repeatability. Works whether you have 1 or 100 audio devices and serial ports, regardless of system resets, always use the correct audio device and serial ports.
+- Reliability. Resilience across restarts, handle crashes and provide 24/7 radio services.
+
 
 ## Limitations
 
