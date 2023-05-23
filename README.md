@@ -11,9 +11,6 @@ Docker containers for running APRS on ham radio
 ## Limitations
 
 - **Only Linux is currently supported**. This work is targeted at small, cheap and compact Linux embedded devices running radio services 24/7. Windows has limitations sharing hadware to Docker containers. Mac OS support could be added in the future, but running services 24/7 on Mac systems is not considered economical for this to be a priority.
-- **Multiple sound cards of the same type and model are not supported**. If your system has two Signalink or two Digirig sound cards, it's not possible to uniquely identify one of each sound card of the same type. As a result any one of the two devices could be used. It is possible to identify each Signalink and Digirig individually, as they use different audio CODECs, however. While it is easily possible to modify the `start_direwolf.sh` to suit your needs, this project is specifically focused on *reliability* and *repeatabiliy*. This limitations comes from the fact that the USB descriptors in the USB CODECs are all the same for all the ICs of the same make or familly *(TI should be blamed for this)*, and different sound cards have the same identical name and description. I am working on this limitation, and I am looking for a software only solution involving the USB port the sound card is connected to. 
-- **Only USB sound cards are supported**.
-- **Only sound cards with built in VOX are currently supported**. This limitation comes from limitations of sharing USB serial ports to Docker. Docker can access serial ports, but it's not easily possible to identify the serial port associated with a particular Digirig for example, if your system has few. This can be make to work with additional settings, like mapping the Digirig serial port to a specific name, but doesn't out of the box if you use this project. You can modify `start_direwolf.sh` and `compose.yaml` to suit your needs.
 - **No GPIO access**. You can change `compose.yaml` to satisfy your needs and expose GPIO. Support for this out of the box might be added later.
 
 ## Running
@@ -24,6 +21,11 @@ Follow the configuration section first. Run from the root directory, to build an
 docker compose build
 docker compose up
 ~~~~
+
+## Troubleshooting
+
+### Running things into the container
+### SSH into the container
 
 ## Connecting APRS clients
 
@@ -48,25 +50,11 @@ Go to Tools - Options, in the open modal Dialog, then go to TNC, set TNC Mode to
 
 ![image](https://user-images.githubusercontent.com/30967482/235284419-5b581871-4119-466f-bf70-0e30406f9846.png)
 
-## Settings by soundcard
+## Settings
 
-Set the variables `AUDIO_USB_NAME` and `AUDIO_USB_DESC` inside your `.env` file based on the soundcard you use.
+### Sound card and serial port
 
-Use Alsa's aplay and arecord tools, or find_devices from https://github.com/iontodirel/find_devices to find the name and description of your device.
-
-### Signalink
-
-~~~~
-AUDIO_USB_NAME=USB Audio
-AUDIO_USB_DESC=Texas Instruments
-~~~~
-
-### Digirig
-
-~~~~
-AUDIO_USB_NAME=USB PnP Sound Device
-AUDIO_USB_DESC=C-Media
-~~~~
+### Callsign
 
 ## Linux host machine configuration
 
@@ -122,10 +110,6 @@ docker compose up
 
 TBD
 
-### Debian on Beaglebone
-
-TBD
-
 ## Resilience
 
 - The audio soudcard can be connected to any USB port.
@@ -166,8 +150,6 @@ The `.env` file contains various defaults and should be only file that needs edi
 
 The `DIREWOLF_HOST_AGWP_PORT` and `DIREWOLF_HOST_KISS_PORT` variables contains the ports exposed from the container to the host, and what APRS clients will be configured with.
 
-If you have more than one audio device type, capable of both playback and rendering, use `AUDIO_USB_NAME` and `AUDIO_USB_DESC` to select it. Currently, multiple audio devices of the same type are not supported, ex: Two Signalink on the same system. This is because while we can detect them, we cannot disambiguate which one to use based on name or description, as they are all based on Texas Instruments CODECs, with the same USB descriptors and same name and description. Future work might address this issue by selecting devices based on USB port used.
+The `direwolf\start_direwolf.sh` contains no hardcoded values, but contains defaults about the directory to log files to, or configuration mode for findind the Alsa devices.
 
-The `direwolf\start_direwolf.sh` contains no hardcoded values, but contains defaults about directory to log files to, or configuration type for findind the Alsa devices.
-
-The `direwolf\direwolf.conf` contains default values for direwolf, but settings like call sign and ports are substituted based on the `.env` configuration, during container run, as part of running `start_direwolf.sh`.
+The `direwolf\direwolf.conf` contains default values for direwolf, but settings like `call sign` and `ports` are substituted based on the `.env` configuration, during container run, as part of running `start_direwolf.sh`.
