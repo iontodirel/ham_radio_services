@@ -1,9 +1,9 @@
-FROM ubuntu:22.04
+FROM ubuntu:23.04
 
 RUN apt-get update -y
 RUN apt-get install -y alsa-tools alsa-utils
 RUN apt-get install -y direwolf
-RUN apt-get install -y gcc g++ make cmake libasound2-dev git
+RUN apt-get install -y gcc g++ make cmake libasound2-dev libudev-dev git
 RUN apt-get install -y jq
 
 RUN git clone https://github.com/iontodirel/find_devices.git

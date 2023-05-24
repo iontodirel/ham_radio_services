@@ -1,0 +1,19 @@
+    {
+        "search_criteria":
+        {
+            "audio":
+            {
+                "desc": "C-Media",
+                "type": "playback&capture"
+            },
+            "port":
+            {
+                "desc": "CP2102N",
+                "serial": "f6a69ba44567ec119b112342ef680de7"
+            }
+        },
+        "search_mode": "port-siblings",
+        "included_devices": "all",
+        "use_json": "false",
+        "output_file": "digirig_output.json"
+    }

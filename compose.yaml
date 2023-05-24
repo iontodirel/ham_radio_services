@@ -10,6 +10,6 @@ services:
     ports:
       - "${DIREWOLF_HOST_AGWP_PORT}:${DIREWOLF_CONTAINER_AGWP_PORT}"
       - "${DIREWOLF_HOST_KISS_PORT}:${DIREWOLF_CONTAINER_KISS_PORT}"
-    devices:
-      - /dev/snd
-    restart: always
+    volumes:
+      - ${FIND_DEVICES_HOST_CONFIG}:${FIND_DEVICES_CONTAINER_CONFIG}
+    privileged: true
