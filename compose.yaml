@@ -1,5 +1,5 @@
 services:
-  direwolf:
+  direwolfm:
     env_file:
       - .env
     build: ./direwolf
@@ -11,5 +11,22 @@ services:
       - "${DIREWOLF_HOST_AGWP_PORT}:${DIREWOLF_CONTAINER_AGWP_PORT}"
       - "${DIREWOLF_HOST_KISS_PORT}:${DIREWOLF_CONTAINER_KISS_PORT}"
     volumes:
-      - ${FIND_DEVICES_HOST_CONFIG}:${FIND_DEVICES_CONTAINER_CONFIG}
+      - ${DIREWOLF_FIND_DEVICES_HOST_CONFIG}:${FIND_DEVICES_CONTAINER_CONFIG}
+    networks:
+      - direwolf_network
     privileged: true
+  aprx:
+    env_file:
+      - .env
+    build: ./aprx
+    image: aprx
+    ports:
+      - 14580:14580
+      - 10152:10152
+    networks:
+      - direwolf_network
+    depends_on:
+      - direwolfm
+networks:
+  direwolf_network:
+    driver: bridge

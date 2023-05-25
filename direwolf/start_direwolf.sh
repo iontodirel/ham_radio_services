@@ -14,7 +14,8 @@
 : "${DIREWOLF_CONTAINER_KISS_PORT:=8001}"
 : "${MYCALL:=N0CALL}"
 
-echo "Using \"$FIND_DEVICES_CONTAINER_CONFIG\" to find devices"
+echo "Using \"$FIND_DEVICES_CONTAINER_CONFIG\" to find devices using find_devices"
+echo "See https://github.com/iontodirel/find_devices"
 
 # Check that the find_devices utility is found
 if ! command -v "$FIND_DEVICES" >/dev/null 2>&1; then
@@ -22,7 +23,7 @@ if ! command -v "$FIND_DEVICES" >/dev/null 2>&1; then
     exit 1
 fi
 
-# Find devices
+# Call find_devices
 if ! $FIND_DEVICES -c $FIND_DEVICES_CONTAINER_CONFIG -o $OUT_JSON --no-stdout; then
     echo "Failed to find devices"
     exit 1
@@ -32,7 +33,7 @@ fi
 audio_devices_count=$(jq ".audio_devices | length" $OUT_JSON)
 serial_ports_count=$(jq ".serial_ports | length" $OUT_JSON)
 # Pick the first sound card and serial port
-# Adjust your configuration to alwats find one device
+# Adjust your configuration to always find one device
 audio_device=$(jq -r '.audio_devices[0].plughw_id // ""' $OUT_JSON)
 serial_port=$(jq -r '.serial_ports[0].name // ""' $OUT_JSON)
 
@@ -49,8 +50,6 @@ fi
 
 # Check counts
 # Update as appropriate
-# Uncomment or comment next lines after as you are writing your configuration
-# to find exactly one devices
 if [ $audio_devices_count -ne 1 ]; then
     echo "Audio devices not equal to 1"
     exit 1
@@ -60,7 +59,6 @@ if [ $serial_ports_count -ne 1 ]; then
     exit 1
 fi
 
-# Use the ALSA sound card id for something
 echo "Using audio device \"$audio_device\" and serial port for PTT \"$serial_port\""
 
 # if config file does not exist then exit
@@ -72,6 +70,7 @@ fi
 
 # replace soundard id in direwolf.conf file
 sed -i "s/ADEVICE.*/ADEVICE $audio_device/" $DIREWOLF_CONFIG_FILE
+# replace PTT in direwolf.conf file
 sed -i "s|PTT.*|PTT $serial_port RTS|" "$DIREWOLF_CONFIG_FILE"
 
 # replace callsign in direwolf.conf file
@@ -81,7 +80,10 @@ sed -i "s/MYCALL.*/MYCALL $MYCALL/" $DIREWOLF_CONFIG_FILE
 sed -i "s/AGWPORT.*/AGWPORT $DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_CONFIG_FILE
 sed -i "s/KISSPORT.*/KISSPORT $DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_FILE
 
-# start direwolf
+#
+# Start direwolf
+#
+
 echo "Starting direwolf with callsign '$MYCALL', devices '$audio_device' '$serial_port', and ports '$DIREWOLF_CONTAINER_AGWP_PORT', '$DIREWOLF_CONTAINER_KISS_PORT'"
 echo ""
 
