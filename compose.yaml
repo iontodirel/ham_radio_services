@@ -1,4 +1,21 @@
 services:
+  # ------------------------------------------------------
+  # direwolfm - Direwolf modem container
+  # ------------------------------------------------------
+  # uses configuration based on the .env file
+  # the settings here require no changes
+  #
+  # Exposes typically ports 8010 and 8020 to the host (this can be configured from .env)
+  # Has a volume mounted to read the digirig_config.json or other files (this can be configured from .env)
+  # A private network is created and exposed between the direwolf container
+  # and the aprx container, so that aprx can use port 8020 (typically) 
+  # to access the Direwolf TCN KISS TNC
+  # This container is given access to the host via --privileged such
+  # that we can access USB sound cards and USB serial ports
+  #
+  # You can create multiple simultanously running containers
+  # based on the Direwolf container directory
+  # ------------------------------------------------------
   direwolfm:
     env_file:
       - .env
@@ -8,13 +25,17 @@ services:
       - ${DIREWOLF_HOST_AGWP_PORT}
       - ${DIREWOLF_HOST_KISS_PORT}
     ports:
-      - "${DIREWOLF_HOST_AGWP_PORT}:${DIREWOLF_CONTAINER_AGWP_PORT}"
-      - "${DIREWOLF_HOST_KISS_PORT}:${DIREWOLF_CONTAINER_KISS_PORT}"
+      - "${DIREWOLF_HOST_AGWP_PORT}:${_DIREWOLF_CONTAINER_AGWP_PORT}"
+      - "${DIREWOLF_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
     volumes:
-      - ${DIREWOLF_FIND_DEVICES_HOST_CONFIG}:${FIND_DEVICES_CONTAINER_CONFIG}
+      - ${DIREWOLF_FD_HOST_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
     networks:
       - direwolf_network
     privileged: true
+    #restart: always
+  # ------------------------------------------------------
+  # aprx - repeater container
+  # ------------------------------------------------------
   aprx:
     env_file:
       - .env
@@ -27,6 +48,28 @@ services:
       - direwolf_network
     depends_on:
       - direwolfm
+    #restart: always
+  # ------------------------------------------------------
+  # gps - gpsd container
+  # ------------------------------------------------------
+  # exposes port 8888 (typically), can be changed with GPS_HOST_PORT from .env
+  # can use "cgps -s localhost:8888" on the host to check (apt-get install gpsd-clients)
+  #
+  # This container is given access to the host via --privileged such
+  # that we can access USB serial ports
+  gps:
+    env_file:
+      - .env
+    build: ./gps
+    image: gps  
+    expose:
+      - ${GPS_HOST_PORT}
+    ports:
+      - "${GPS_HOST_PORT}:${_GPS_CONTAINER_PORT}"
+    volumes:
+      - ${GPS_FIND_DEVICES_HOST_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
+    privileged: true
+    #restart: always
 networks:
   direwolf_network:
     driver: bridge

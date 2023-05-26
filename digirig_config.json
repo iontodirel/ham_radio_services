@@ -12,8 +12,5 @@
                 "serial": "f6a69ba44567ec119b112342ef680de7"
             }
         },
-        "search_mode": "port-siblings",
-        "included_devices": "all",
-        "use_json": "false",
-        "output_file": "digirig_output.json"
+        "search_mode": "port-siblings"
     }

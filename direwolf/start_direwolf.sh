@@ -3,29 +3,36 @@
 # NOTE: Please modify the path to 'find_devices' as appropriate by updating FIND_DEVICES
 : "${FIND_DEVICES:=/find_devices/find_devices}"
 # Generic configuration in the same directory as the script
-: "${FIND_DEVICES_CONTAINER_CONFIG:=digirig_config.json}"
+: "${_DIREWOLF_CONTAINER_FD_CONFIG:=digirig_config.json}"
 # Can simply remain the same
 : "${OUT_JSON:=output.json}"
 # Update with your own direwolf.conf file and location
 # this file is located in the same directory as this script
 : "${DIREWOLF_CONFIG_FILE:=direwolf.conf}"
 # Set by docker compose
-: "${DIREWOLF_CONTAINER_AGWP_PORT:=8000}"
-: "${DIREWOLF_CONTAINER_KISS_PORT:=8001}"
+: "${_DIREWOLF_CONTAINER_AGWP_PORT:=8000}"
+: "${_DIREWOLF_CONTAINER_KISS_PORT:=8001}"
 : "${MYCALL:=N0CALL}"
 
-echo "Using \"$FIND_DEVICES_CONTAINER_CONFIG\" to find devices using find_devices"
+echo "Using \"$_DIREWOLF_CONTAINER_FD_CONFIG\" to find devices using find_devices"
 echo "See https://github.com/iontodirel/find_devices"
+
+# if find_devices config file does not exist then exit
+if ! test -f "$_DIREWOLF_CONTAINER_FD_CONFIG"
+then
+    echo "Error: No find_devices config file found \"$_DIREWOLF_CONTAINER_FD_CONFIG\""
+    exit 1
+fi
 
 # Check that the find_devices utility is found
 if ! command -v "$FIND_DEVICES" >/dev/null 2>&1; then
-    echo "Executable" \"$FIND_DEVICES\"" not found"
+    echo "Error: Executable" \"$FIND_DEVICES\"" not found"
     exit 1
 fi
 
 # Call find_devices
-if ! $FIND_DEVICES -c $FIND_DEVICES_CONTAINER_CONFIG -o $OUT_JSON --no-stdout; then
-    echo "Failed to find devices"
+if ! $FIND_DEVICES -c $_DIREWOLF_CONTAINER_FD_CONFIG -o $OUT_JSON --no-stdout; then
+    echo "Error: Failed to find devices"
     exit 1
 fi
 
@@ -44,18 +51,18 @@ echo "Serial port: \"$serial_port\""
 
 # Return if no soundcards and serial ports were found
 if [ $audio_devices_count -eq 0 ] || [ $serial_ports_count -eq 0 ]; then
-     echo "No audio devices and serial ports found, expected at least one soundcard and at least one serial port"
+     echo "Error: No audio devices and serial ports found, expected at least one soundcard and at least one serial port"
      exit 1
 fi
 
 # Check counts
 # Update as appropriate
 if [ $audio_devices_count -ne 1 ]; then
-    echo "Audio devices not equal to 1"
+    echo "Error: Audio devices not equal to 1"
     exit 1
 fi
 if [ $serial_ports_count -ne 1 ]; then
-    echo "Serial ports not equal to 1"
+    echo "Error: Serial ports not equal to 1"
     exit 1
 fi
 
@@ -64,7 +71,7 @@ echo "Using audio device \"$audio_device\" and serial port for PTT \"$serial_por
 # if config file does not exist then exit
 if ! test -f "$DIREWOLF_CONFIG_FILE"
 then
-    echo "No config file found $DIREWOLF_CONFIG_FILE"
+    echo "Error: No Direwolf config file found \"$DIREWOLF_CONFIG_FILE\""
     exit 1
 fi
 
@@ -77,14 +84,14 @@ sed -i "s|PTT.*|PTT $serial_port RTS|" "$DIREWOLF_CONFIG_FILE"
 sed -i "s/MYCALL.*/MYCALL $MYCALL/" $DIREWOLF_CONFIG_FILE
 
 # replace AGWPORT and KISSPORT in direwolf.conf file
-sed -i "s/AGWPORT.*/AGWPORT $DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_CONFIG_FILE
-sed -i "s/KISSPORT.*/KISSPORT $DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_FILE
+sed -i "s/AGWPORT.*/AGWPORT $_DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_CONFIG_FILE
+sed -i "s/KISSPORT.*/KISSPORT $_DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_FILE
 
 #
 # Start direwolf
 #
 
-echo "Starting direwolf with callsign '$MYCALL', devices '$audio_device' '$serial_port', and ports '$DIREWOLF_CONTAINER_AGWP_PORT', '$DIREWOLF_CONTAINER_KISS_PORT'"
+echo "Starting direwolf with callsign '$MYCALL', devices '$audio_device' '$serial_port', and ports '$_DIREWOLF_CONTAINER_AGWP_PORT', '$_DIREWOLF_CONTAINER_KISS_PORT'"
 echo ""
 
 /usr/bin/direwolf -t 0 -a 10 -c $DIREWOLF_CONFIG_FILE -l .
