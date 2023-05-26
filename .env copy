@@ -27,12 +27,12 @@ _DIREWOLF_CONTAINER_SERVICE=direwolfm
 # ------------------------------------------------------
 #
 # Change to your callsign
-MYCALL=N0CALL-10
+MYCALL=W7ION-10
 # Set your own coordinates
-LAT=0000.00N
-LON=00000.00W
+LAT=4737.14N
+LON=12212.11W
 # Set your APRS-IS password
-APRSIS_PASSCODE=0000
+APRSIS_PASSCODE=9114
 #
 # ------------------------------------------------------
 # gps configuration
