@@ -1,20 +1,32 @@
 # APRS Docker containers
 
-Docker containers for running APRS on ham radio
+Docker containers for running APRS on ham radio.
+
+These containers are fully functional and finished, but they primarely serve as templates that can easily be modified and repurposed into different applications for APRS and ham radio. The goal is to have configurability via minimal code changes, no scripting, and rather than supporting all possible use cases, support a basic use case while providing all flexibility to change via small code changes.
 
 ## Goals
 
+- Easily modifiable and repurposable containers, scripts and code. Easy to repurpose via small code edits
 - Easy, fast, and painless deployment of radio services to any new Linux system
   - Zero configuration or system alterations, only needs Docker
   - One click deployment on any Linux system
-- Repeatability. Works whether you have 1 or 100 audio devices and serial ports, regardless of system resets, always use the correct audio device and serial ports.
-- Reliability. Resilience across restarts, handle crashes and provide 24/7 radio services.
-
+  - Only use Docker with no external host scripting
+- Repeatability on any host. Works whether you have 1 or 100 audio devices and serial ports, regardless of system resets, always use the correct audio device and serial ports. *Based on work done for find_devices https://github.com/iontodirel/find_devices*.
+- Reliability. Resilience across restarts, with health checks, handle crashes to provide *24/7* radio services.
 
 ## Limitations
 
-- **Only Linux is currently supported**. This work is targeted at small, cheap and compact Linux embedded devices running radio services 24/7. Windows has limitations sharing hadware to Docker containers. Mac OS support could be added in the future, but running services 24/7 on Mac systems is not considered economical for this to be a priority.
+- **Only Linux is currently supported**. This work is targeted at small, cheap and compact Linux embedded devices, running radio services 24/7. Windows has limitations sharing hadware to Docker containers. Mac OS support could be added in the future, but running services 24/7 on Mac systems is not considered economical for this to be a priority.
 - **No GPIO access**. You can change `compose.yaml` to satisfy your needs and expose GPIO. Support for this out of the box might be added later.
+- **Needs the --privileged mode**. Unfortunately compose does not have hooks for host scripting, which means we need to run find_devices in the containers, and the containers need hardware access. We could simply run this in the host easily, but then we loose the usefulness and convinience of Docker Compose.
+
+## Configuration
+
+These containers are not an E2E application, they are not meant to be taken as is without modifications. They are written for maximum hackability with minimal changes.
+
+If you don't need GPS, and repeater capabilities, or don't have the GPS hardware, simply comment these services in the `compose.yaml` file that you don't need. If you need another direwolf container to listen only, simply add it in the compose file. 
+
+If you don't use a Digirig, simple write another configuration for find_devices. find_devices should support any sound card device.
 
 ## Running
 
@@ -25,7 +37,7 @@ Follow the instructions in the configuration section first. Run from the root di
 
 If you want to run the Direwolf container, or one of the containers directly:
 
-`docker build -t direwolf .`
+`docker build -t direwolf .` \
 `docker run -p 8000:8000 -p 8001:8001 -t -d --privileged direwolf`
 
 ## Troubleshooting
@@ -38,7 +50,13 @@ If you want to run the Direwolf container, or one of the containers directly:
 
 This will expose a serial port and the sound subsystem to the container:
 
-`docker run -it --device /dev/ttyUSB0:/dev/ttyUSB0 --device /dev/snd -tty --entrypoint /bin/sh direwolf`
+`docker run -it --device /dev/ttyUSB0:/dev/ttyUSB0 --device /dev/snd --tty --entrypoint /bin/sh direwolf`
+
+
+
+docker build -t gps .
+docker run -it --privileged --tty --entrypoint /bin/sh gps
+
 
 **NOTE**: change the serial port as appropriate
 
@@ -59,6 +77,14 @@ The `DIREWOLF_HOST_AGWP_PORT` and `DIREWOLF_HOST_KISS_PORT` variables contains t
 The `direwolf\start_direwolf.sh` contains no hardcoded values, but contains defaults about the directory to log files to, or configuration mode for find_devices.
 
 The `direwolf\direwolf.conf` contains default values for direwolf, but settings like `call sign` and `ports` are automatically substituted in the container, based on the `.env` configuration, during container run, as part of running `start_direwolf.sh`.
+
+## Containers
+
+### Direwolf
+### Aprx
+### GPS
+
+## Contents
 
 ## Connecting APRS clients
 
@@ -83,12 +109,6 @@ Go to Tools - Options, in the open modal Dialog, then go to TNC, set TNC Mode to
 
 ![image](https://user-images.githubusercontent.com/30967482/235284419-5b581871-4119-466f-bf70-0e30406f9846.png)
 
-## Settings
-
-### Sound card and serial port
-
-### Callsign
-
 ## Linux host machine configuration
 
 The Linux system requires minimal configuration, as our container handles everything. The only real requirements are `git` and `Docker`.
@@ -96,6 +116,8 @@ The Linux system requires minimal configuration, as our container handles everyt
 ### Raspberry Pi 4 with Raspbian 32-bit
 
 Below is an example configuration done to setup the Docker APRS container to run on a fresh install Raspberry Pi.
+
+**Note** that setps 1 through 4 is for installing Docker.
 
 **1. Setup the system for first time use.**
 
