@@ -28,7 +28,7 @@ services:
       - "${DIREWOLF_HOST_AGWP_PORT}:${_DIREWOLF_CONTAINER_AGWP_PORT}"
       - "${DIREWOLF_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
     volumes:
-      - ${DIREWOLF_FD_HOST_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
+      - ${DIREWOLF_HOST_FD_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
     networks:
       - direwolf_network
     privileged: true
@@ -42,12 +42,16 @@ services:
     build: ./aprx
     image: aprx
     ports:
+      # These ports are for APRX accessing APRS-IS
       - 14580:14580
       - 10152:10152
+      # For accessing the GPSD service from the GPS container through the host
+      - ${GPS_HOST_PORT}
     networks:
       - direwolf_network
     depends_on:
       - direwolfm
+      - gps
     #restart: always
   # ------------------------------------------------------
   # gps - gpsd container
@@ -67,7 +71,7 @@ services:
     ports:
       - "${GPS_HOST_PORT}:${_GPS_CONTAINER_PORT}"
     volumes:
-      - ${GPS_FIND_DEVICES_HOST_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
+      - ${GPS_HOST_FD_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
     privileged: true
     #restart: always
 networks:
