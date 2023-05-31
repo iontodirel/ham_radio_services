@@ -1,6 +1,11 @@
 #!/bin/sh
 
-: "${APRX_CONFIG_FILE:=aprx.conf}"
+# **************************************************************** #
+# ham_docker_container - Containers for APRS and ham radio         #
+# Version 0.1.0                                                    #
+# https://github.com/iontodirel/ham_docker_container               #
+# Copyright (c) 2023 Ion Todirel                                   #
+# **************************************************************** #
 #
 # All below variables set by docker compose
 #
@@ -11,6 +16,18 @@
 : "${_DIREWOLF_CONTAINER_SERVICE:=direwolfm}"
 : "${_DIREWOLF_CONTAINER_AGWP_PORT:=8000}"
 : "${_DIREWOLF_CONTAINER_KISS_PORT:=8001}"
+: "${_APRX_CONTAINER_CONFIG_FILE:=aprx.conf}"
+: "${APRX_CONFIG_FILE:=/aprx/aprx.conf}"
+
+echo "Copying config from $_APRX_CONTAINER_CONFIG_FILE to $APRX_CONFIG_FILE, and using $APRX_CONFIG_FILE"
+cp $_APRX_CONTAINER_CONFIG_FILE $APRX_CONFIG_FILE
+
+# Check that the config file exists
+if ! test -f "$APRX_CONFIG_FILE"
+then
+    echo "Error: No aprx config file found \"$APRX_CONFIG_FILE\""
+    exit 1
+fi
 
 #
 # replace mycall, passcode, tcp-device and myloc in aprx.conf file, using sed

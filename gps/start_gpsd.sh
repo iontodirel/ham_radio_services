@@ -1,11 +1,19 @@
 #!/bin/sh
 
+# **************************************************************** #
+# ham_docker_container - Containers for APRS and ham radio         #
+# Version 0.1.0                                                    #
+# https://github.com/iontodirel/ham_docker_container               #
+# Copyright (c) 2023 Ion Todirel                                   #
+# **************************************************************** #
+
 # NOTE: Please modify the path to 'find_devices' as appropriate by updating FIND_DEVICES
 : "${FIND_DEVICES:=/find_devices/find_devices}"
 # Generic configuration in the same directory as the script
 : "${_GPS_CONTAINER_FD_CONFIG:=ublox_config.json}"
 # Can simply remain the same
 : "${OUT_JSON:=output.json}"
+: "${_GPS_CONTAINER_PORT:=2947}"
 
 echo "Using \"$_GPS_CONTAINER_FD_CONFIG\" to find devices using find_devices"
 echo "See https://github.com/iontodirel/find_devices"
@@ -51,7 +59,7 @@ if [ $serial_ports_count -ne 1 ]; then
 fi
 
 echo "Using serial port for GPS \"$serial_port\""
-echo "Starting gpsd with serial port \"$serial_port\", with options: -G -n -N -F /var/run/gpsd.sock"
+echo "Starting gpsd with serial port \"$serial_port\", with options: -S $_GPS_CONTAINER_PORT -G -n -N -F /var/run/gpsd.sock"
 
-rm /var/run/gpsd.sock
-/usr/sbin/gpsd $serial_port -G -n -N -F /var/run/gpsd.sock
+rm -f /var/run/gpsd.sock
+/usr/sbin/gpsd $serial_port -S $_GPS_CONTAINER_PORT -G -n -N -F /var/run/gpsd.sock

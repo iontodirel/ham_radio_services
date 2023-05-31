@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# **************************************************************** #
+# ham_docker_container - Containers for APRS and ham radio         #
+# Version 0.1.0                                                    #
+# https://github.com/iontodirel/ham_docker_container               #
+# Copyright (c) 2023 Ion Todirel                                   #
+# **************************************************************** #
+
 # NOTE: Please modify the path to 'find_devices' as appropriate by updating FIND_DEVICES
 : "${FIND_DEVICES:=/find_devices/find_devices}"
 # Generic configuration in the same directory as the script
@@ -33,6 +40,13 @@ fi
 # Call find_devices
 if ! $FIND_DEVICES -c $_DIREWOLF_CONTAINER_FD_CONFIG -o $OUT_JSON --no-stdout; then
     echo "Error: Failed to find devices"
+    exit 1
+fi
+
+# Check that the output json file was created
+if ! test -f "$OUT_JSON"
+then
+    echo "Error: No output json output file found \"$OUT_JSON\""
     exit 1
 fi
 

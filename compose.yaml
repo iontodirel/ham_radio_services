@@ -1,3 +1,10 @@
+# **************************************************************** #
+# ham_docker_container - Containers for APRS and ham radio         #
+# Version 0.1.0                                                    #
+# https://github.com/iontodirel/ham_docker_container               #
+# Copyright (c) 2023 Ion Todirel                                   #
+# **************************************************************** #
+
 services:
   # ------------------------------------------------------
   # direwolfm - Direwolf modem container
@@ -45,10 +52,11 @@ services:
       # These ports are for APRX accessing APRS-IS
       - 14580:14580
       - 10152:10152
-      # For accessing the GPSD service from the GPS container through the host
-      - ${GPS_HOST_PORT}
+    volumes:
+      - ${APRX_HOST_CONFIG_FILE}:${_APRX_CONTAINER_CONFIG_FILE}
     networks:
       - direwolf_network
+      - gps_network
     depends_on:
       - direwolfm
       - gps
@@ -72,8 +80,12 @@ services:
       - "${GPS_HOST_PORT}:${_GPS_CONTAINER_PORT}"
     volumes:
       - ${GPS_HOST_FD_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
+    networks:
+      - gps_network
     privileged: true
     #restart: always
 networks:
   direwolf_network:
+    driver: bridge
+  gps_network:
     driver: bridge
