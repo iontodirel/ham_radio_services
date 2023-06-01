@@ -32,6 +32,9 @@ fi
 
 lat=$(jq -r '.position_ddm_short.lat // ""' $OUT_JSON)
 lon=$(jq -r '.position_ddm_short.lon // ""' $OUT_JSON)
+day=$(jq -r '.utc_time.day // ""' $OUT_JSON)
+hour=$(jq -r '.utc_time.hour // ""' $OUT_JSON)
+min=$(jq -r '.utc_time.min // ""' $OUT_JSON)
 # NOTE: set your own igate symbol
 symTabId="I"
 sym="&"
@@ -44,6 +47,39 @@ if [ -z "$lat" ] || [ -z "$lon" ]; then
     exit 1
 fi
 
-echo "!$lat$symTabId$lon$sym$comment\n"
+# 
+#  Data Format:
+# 
+#     !   Lat  Sym  Lon  Sym Code   Comment
+#     =
+#    ------------------------------------------
+#     1    8    1    9      1        0-43
+#
+#  Examples:
+#
+#    !4903.50N/07201.75W-Test 001234
+#    !4903.50N/07201.75W-Test /A=001234
+#    !49  .  N/072  .  W-
+#
+
+position_no_timestamp="!$lat$symTabId$lon$sym$comment"
+
+# 
+#  Data Format:
+# 
+#     /   Time  Lat   Sym  Lon  Sym Code   Comment
+#     @
+#    -----------------------------------------------
+#     1    7     8     1    9      1        0-43
+#
+#  Examples:
+#
+#    /092345z4903.50N/07201.75W>Test1234
+#    @092345/4903.50N/07201.75W>Test1234
+#
+
+position_with_timestamp="@$day$hour${min}z$lat$symTabId$lon$sym$comment"
+
+echo "$position_with_timestamp\n"
 
 exit 0
