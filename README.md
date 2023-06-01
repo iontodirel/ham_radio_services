@@ -1,4 +1,4 @@
-# APRS Docker containers
+# Containerized APRS and ham radio services
 
 Docker containers for running APRS on ham radio.
 
@@ -79,7 +79,9 @@ The `direwolf\direwolf.conf` contains default values for direwolf, but settings 
 
 ## Containers
 
-**Note** that the containers can be ran standalone, but the (minimal) scripting around each container was written to support full automation and with `compose` in mind. You'll need to set the approrpiate variables for the scripts when not using compose. This is pretty easy to follow, if you read the contents of the `.env` file defaults, and `compose.yaml`. You should not need to run the containers directly unless you are debugging an issue. If you don't want to use compose, you don't have to, but you'll need to create the appropriate command lines for yourself. Again, follow what `compose.yaml` is doing if you want to follow that route, it's not hard.
+**YOU DON'T NEED TO DO ANYTHING FROM THE BELOW**, `compose` via `compose.yaml` runs and setups the accesses, ports, sharing etc. all automatically with zero configuration for the containers required.
+
+**Note** that the containers can be ran standalone, but the (minimal) scripting around each container was written to support full automation and with `compose` in mind. You'll need to set the appropeiate variables for the scripts when not using compose, or simply consume the `.env` file. This is pretty easy to follow, if you read the contents of the `.env` file defaults, and `compose.yaml`. You should not need to run the containers directly unless you are debugging an issue. If you don't want to use compose, you don't have to, but you'll need to create the appropriate command lines for yourself. Again, follow what `compose.yaml` is doing, if you want to follow the route without compose, it's not hard.
 
 ### Direwolf
 
@@ -89,11 +91,13 @@ The `direwolf.conf` contains a basic Direwolf modem configuration, the `start_di
 
 The container needs hardware access to USB and serial ports, so we can enumerate the hardware and have Direwolf use it. You can give the container granular access to the hardware or use the `--privileged` mode. When used in conjunction with `compose` and running Direwolf as a service, only `--privileged` mode is supported, as compose has no host side scripting capability. If this is important to you can still use the contaner, but run find_devices externally and replace management of the container startup with your own scripting.
 
-To access the TCP servers from Direwolf, expose the appropriate ports to the host, this is not something you need to do if you use compose from the root directory.
+To access the TCP KISS and AWGPE servers from Direwolf, expose the appropriate ports when starting the container, so you have access to the services from the host.
 
 ### Aprx
 
-This container runs `aprx`. 
+This container runs `aprx`. The `aprx.conf` is used to configure `aprx` service and is an example of a limited fill-in TX igate. Change the configuration if you need more. The `start_aprx.sh` script uses `sed` to setup the callsign, KISS TCP port (from Direwolf), APRS-IS passcode, location etc. which are configured in the `.env` file.
+
+The `fetch_gps.sh` script, uses the `gps_util` utility https://github.com/iontodirel/gps_util, a GPSD client, to create packets dynamically with the position fetched from a GPSD server. Thus when running the aprx container, if mobile/location capability is desired, give the container access to the port exposed by the gps container or a GPSD server (**Note** this happens automatically when using compose in the root). The aprx service can be configured to use a realtime GPS service, or a fixed location, based on whether you have a mobile or fixes igate. Simply comment or uncomment one of the two beacon lines in `aprx.conf`. When running the aprx container, give it access to ports `14580` and `10152` on the host so that aprx can access the APRS-IS service. As currently configured this is required as we beacon to APRS-IS, but if you don't want to beacon to APRS-IS and work offline with only radio RX/TX, simple update the `aprx.conf`.
 
 ### GPS
 
@@ -180,7 +184,7 @@ Modify the other configuration files as needed for your application.
 
 Follow the official Docker instructions: https://docs.docker.com/engine/install/ubuntu/
 
-**Note** instructions as similar to Raspbian, but are not explained to the same detail. Please just follow official Docker documentation.
+**Note** instructions are similar to Raspbian, but are not explained to the same level of detail to keep things simple. Please just follow official Docker documentation.
 
 **3. Clone the container repo.**
 
