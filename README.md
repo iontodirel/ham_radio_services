@@ -2,7 +2,7 @@
 
 Docker containers for running APRS on ham radio.
 
-These containers are fully functional and finished, but they primarely serve as templates that can easily be modified and repurposed into different applications for APRS and ham radio use. The goal is to have configurability via minimal code changes, no scripting, and rather than supporting all possible use cases, support a set of use case while providing all flexibility to adapt via small code changes.
+These containers are fully functional and finished, but they primarely serve as templates that can easily be modified and repurposed into different applications for APRS and ham radio use. The goal is to have configurability via minimal code changes, no scripting, and rather than supporting all possible use cases, support a set of use cases while providing all flexibility to adopt via small code changes.
 
 ## Goals
 
@@ -22,23 +22,19 @@ These containers are fully functional and finished, but they primarely serve as 
 
 ## Configuration
 
-These containers are not an E2E application, they are not meant to be taken as is without modifications. They are written for maximum hackability with minimal changes.
+These containers are not an E2E application, they are not meant to be taken as is without modifications (but could!). They are written for maximum hackability with minimal changes.
 
-If you don't need GPS, and repeater capabilities, or don't have the GPS hardware, simply comment these services in the `compose.yaml` file that you don't need. If you need another direwolf container to listen only, simply add it in the compose file. 
+If you don't need GPS, and repeater capabilities, or don't have the GPS hardware, simply comment these services in the `compose.yaml` file, or anything esle that you don't need. If you need a second direwolf container to RX only, simply add it in the compose file.
 
-If you don't use a Digirig, simple write another configuration for find_devices. find_devices should support any sound card device.
+If you don't use a Digirig, simple write another configuration for find_devices to find your sound card and/or serial port. find_devices should support any sound card and serial port device.
 
 ## Running
 
-Follow the instructions in the configuration section first. Run from the root directory::
+Run from the root directory:
 
 `docker compose build` \
 `docker compose up`
 
-If you want to run the Direwolf container, or one of the containers directly:
-
-`docker build -t direwolf .` \
-`docker run -p 8000:8000 -p 8001:8001 -t -d --privileged direwolf`
 
 ## Troubleshooting
 
@@ -48,7 +44,7 @@ If you want to run the Direwolf container, or one of the containers directly:
 
 ### Running things into the container
 
-This will expose a serial port and the sound subsystem to the Docker container:
+This will expose a serial port and the sound subsystem to the Docker container, and run a prompt into it:
 
 `docker run -it --device /dev/ttyUSB0:/dev/ttyUSB0 --device /dev/snd --tty --entrypoint /bin/sh direwolf`
 
@@ -56,24 +52,39 @@ This will expose a serial port and the sound subsystem to the Docker container:
 
 This will build the gps container, and then run it with hardware access, and with a prompt in the container:
 
-`docker build -t gps .`
+`docker build -t gps .` \
 `docker run -it --privileged --tty --entrypoint /bin/sh gps`
 
-## Minimal configuration
+## If you want to run everything as is with *no changes* to anything
 
-Only change settings in the `.env` and `digirig_config.json` files. The `digirig_config.json` file contains the configuration for **find_devices**, for finding the sound card and serial port. Use this file for your Digirig, or create your own. If you use a different configuration file, set the path to it in `FIND_DEVICES_HOST_CONFIG` inside the `.env` file. Read the instructions from find_devices about how to create your own.
+**Note** follow only if you want to run everything as is with 0 changes. Documentation use case only, as note that is not the recommended way, this project is designed to be hackable and accomodate any hardware.
 
-Set the `MYCALL` variable to your callsign.
+**Hardware requirements:**
 
-### Additional Settings
+- Digirig
+- Digirig cables for your radio
+- A GPS device with a USB serial port, I use a *Sparkfun NEO-M9N, SMA*
+- A computer to run Linux (Raspberry Pi etc.), I originally used a Pi 4, but now use a 
+*CTONE Micro PC* clone from Amazon, with an Intel genuine chip
+- Your own **radio** choice and cables for Digirig, I use a *Yaesu FT2980R*
+- Power supply for the radio
+- GPS antenna, I use a *Bingfu Waterproof Active SMA antenna*, which is a clone from Amazon.
+- 2M antenna, I don't have space and use an HT *Signal Stick* SMA antenna, so I can run the radio at 30W.
 
-The `.env` file contains various defaults and should be only file that needs editing, for any configuration.
+**Software requirements:**
 
-The `DIREWOLF_HOST_AGWP_PORT` and `DIREWOLF_HOST_KISS_PORT` variables contains the ports exposed from the container to the host, and what APRS clients will be configured with.
+- Ubuntu (*have not tested other distros, but probably all works ok*)
+- Docker
 
-The `direwolf\start_direwolf.sh` contains no hardcoded values, but contains defaults about the directory to log files to, or configuration mode for find_devices.
+Update the `.env` file, to set your callsign (`MYCALL`), and APRS-IS passcode (`APRSIS_PASSCODE`).
 
-The `direwolf\direwolf.conf` contains default values for direwolf, but settings like `call sign` and `ports` are automatically substituted in the container, based on the `.env` configuration, during container run, as part of running `start_direwolf.sh`.
+Use the `find_devices` utility, to find your digirig serial port `serial number`, and your GPS device serial port serial number or description, use the find_devices documentation https://github.com/iontodirel/find_devices/blob/main/README.md.
+
+Update the `digirig_config.json` files and `ublox_config.json` files to find your devices, based on the information from find_devices.
+
+Run everything with `docker compose build` followed by `docker compose up`.
+
+**THAT'S IT**
 
 ## Services
 
