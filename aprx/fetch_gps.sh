@@ -19,6 +19,7 @@ if ! command -v "$GPS_UTIL" >/dev/null 2>&1; then
 fi
 
 # Call gps_util
+# https://github.com/iontodirel/gps_util
 if ! $GPS_UTIL -h $_GPS_CONTAINER_SERVICE -p $_GPS_CONTAINER_PORT -o $OUT_JSON --no-stdout; then
     echo "Error: Failed to fetch GPS location"
     exit 1
