@@ -40,7 +40,7 @@ min=$(jq -r '.utc_time.min // ""' $OUT_JSON)
 symTabId="I"
 sym="&"
 # NOTE: set your own igate comment
-comment="APRX+Direwolf Containerized Fill-in TX iGate"
+comment="APRX+Direwolf containerized Fill-in TX iGate"
 
 # check that position is not empty
 if [ -z "$lat" ] || [ -z "$lon" ]; then

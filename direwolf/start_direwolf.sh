@@ -38,6 +38,7 @@ if ! command -v "$FIND_DEVICES" >/dev/null 2>&1; then
 fi
 
 # Call find_devices
+# https://github.com/iontodirel/find_devices
 if ! $FIND_DEVICES -c $_DIREWOLF_CONTAINER_FD_CONFIG -o $OUT_JSON --no-stdout; then
     echo "Error: Failed to find devices"
     exit 1
