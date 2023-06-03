@@ -36,6 +36,8 @@ services:
       - "${DIREWOLF_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
     volumes:
       - ${DIREWOLF_HOST_FD_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
+      # for logging
+      - ${DIREWOLF_HOST_LOG_DIR}:${_DIREWOLF_CONTAINER_LOG_DIR}
     networks:
       - direwolf_network
     privileged: true
@@ -53,7 +55,10 @@ services:
       - 14580:14580
       - 10152:10152
     volumes:
+      # for access to the aprx.conf file
       - ${APRX_HOST_CONFIG_FILE}:${_APRX_CONTAINER_CONFIG_FILE}
+      # for logging
+      - ${APRX_HOST_LOG_DIR}:${_APRX_CONTAINER_LOG_DIR}
     networks:
       - direwolf_network
       - gps_network

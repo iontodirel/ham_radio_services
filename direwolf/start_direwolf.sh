@@ -20,6 +20,7 @@
 : "${_DIREWOLF_CONTAINER_AGWP_PORT:=8000}"
 : "${_DIREWOLF_CONTAINER_KISS_PORT:=8001}"
 : "${MYCALL:=N0CALL}"
+: "${_DIREWOLF_CONTAINER_LOG_DIR:=/direwolf/logs}"
 
 echo "Using \"$_DIREWOLF_CONTAINER_FD_CONFIG\" to find devices using find_devices"
 echo "See https://github.com/iontodirel/find_devices"
@@ -109,4 +110,4 @@ sed -i "s/KISSPORT.*/KISSPORT $_DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_
 echo "Starting direwolf with callsign '$MYCALL', devices '$audio_device' '$serial_port', and ports '$_DIREWOLF_CONTAINER_AGWP_PORT', '$_DIREWOLF_CONTAINER_KISS_PORT'"
 echo ""
 
-/usr/bin/direwolf -t 0 -a 10 -c $DIREWOLF_CONFIG_FILE -l .
+/usr/bin/direwolf -t 0 -a 10 -c $DIREWOLF_CONFIG_FILE -l $_DIREWOLF_CONTAINER_LOG_DIR 2>&1 | tee -a $_DIREWOLF_CONTAINER_LOG_DIR/direwolf-stdout.log

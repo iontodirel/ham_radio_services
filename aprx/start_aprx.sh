@@ -18,6 +18,7 @@
 : "${_DIREWOLF_CONTAINER_KISS_PORT:=8001}"
 : "${_APRX_CONTAINER_CONFIG_FILE:=aprx.conf}"
 : "${APRX_CONFIG_FILE:=/aprx/aprx.conf}"
+: "${_APRX_CONTAINER_LOG_DIR:=/aprx/logs}"
 
 echo "Copying config from $_APRX_CONTAINER_CONFIG_FILE to $APRX_CONFIG_FILE, and using $APRX_CONFIG_FILE"
 cp $_APRX_CONTAINER_CONFIG_FILE $APRX_CONFIG_FILE
@@ -36,11 +37,16 @@ sed -i "0,/mycall/s/mycall.*/mycall $MYCALL/" $APRX_CONFIG_FILE
 sed -i "s/passcode.*/passcode $APRSIS_PASSCODE/" $APRX_CONFIG_FILE
 sed -i "s/tcp-device.*/tcp-device $_DIREWOLF_CONTAINER_SERVICE $_DIREWOLF_CONTAINER_KISS_PORT KISS/" $APRX_CONFIG_FILE
 sed -i "0,/myloc/s/myloc.*/myloc lat $LAT lon $LON/" $APRX_CONFIG_FILE
+sed -i "s|rflog.*|rflog $_APRX_CONTAINER_LOG_DIR/aprx-rf.log|" $APRX_CONFIG_FILE
+sed -i "s|aprxlog.*|aprxlog $_APRX_CONTAINER_LOG_DIR/aprx.log|" $APRX_CONFIG_FILE
+sed -i "s|dprslog.*|dprslog $_APRX_CONTAINER_LOG_DIR/dprs.log|" $APRX_CONFIG_FILE
 
 echo "Starting aprx with:"
 echo "    Callsign \"$MYCALL\""
 echo "    APRS-IS passcode \"$APRSIS_PASSCODE\""
 echo "    KISS TCP connection \"$_DIREWOLF_CONTAINER_SERVICE:$_DIREWOLF_CONTAINER_KISS_PORT\""
 echo "    Config file \"$APRX_CONFIG_FILE\""
+echo "    Options: -dd -L -f"
 
-/usr/sbin/aprx -dd -L -f $APRX_CONFIG_FILE
+/usr/sbin/aprx -dd -L -f $APRX_CONFIG_FILE 2>&1 | tee -a $_APRX_CONTAINER_LOG_DIR/aprx-stdout.log
+
