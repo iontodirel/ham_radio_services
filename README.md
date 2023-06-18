@@ -62,6 +62,10 @@ This will build the gps container, and then run it with hardware access, and ope
 
 This is primarily used as a **documented use case**, as the project was specifically designed to be hackable and accomodate many hardware and service variations.
 
+## Volume level
+
+Use alsamixer to *one time* adjust the sound level of your sound card. This is not typically necessary, and the defaults are just fine.
+
 **Hardware requirements:**
 
 - Digirig
