@@ -43,7 +43,7 @@ services:
     networks:
       - direwolf_network
     privileged: true
-    #restart: always
+    restart: always
   # ------------------------------------------------------
   # aprx - repeater container
   # ------------------------------------------------------
@@ -76,10 +76,11 @@ services:
       - ${AUTOHEAL_ENABLE_RESTART}
     healthcheck:
       test: ["CMD", "${_APRX_CONTAINER_HEALTH_SCRIPT}"]
-      interval: 10s
-      start_period: 10s
-      retries: 1
-      timeout: 10s
+      interval: 10s # the interval to to perform health check
+      start_period: 30s # how long it takes to start the aprx container
+                        # health checks won't count until after this period expires
+      retries: 1        # how many times to retry until the container becomes unhealty
+      timeout: 30s      # how long until the health check completes
     restart: always
   # ------------------------------------------------------
   # gps - gpsd container
@@ -92,7 +93,10 @@ services:
   gps:
     env_file:
       - .env
-    build: ./gps
+    build:
+      context: ./gps
+      args:
+        _GPS_CONTAINER_HEALTH_SCRIPT: ${_GPS_CONTAINER_HEALTH_SCRIPT}
     image: gps  
     expose:
       - ${GPS_HOST_PORT}
@@ -100,10 +104,21 @@ services:
       - "${GPS_HOST_PORT}:${_GPS_CONTAINER_PORT}"
     volumes:
       - ${GPS_HOST_FD_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
-    networks:
+      # service config
+      - ${_GPS_HOST_SVC_CONFIG_FILE}:${_GPS_CONTAINER_SVC_CONF_FILE}
+    networks: 
       - gps_network
     privileged: true
-    #restart: always
+    labels:
+      - ${AUTOHEAL_ENABLE_RESTART}
+    healthcheck:
+      test: ["CMD", "${_GPS_CONTAINER_HEALTH_SCRIPT}"]
+      interval: 10s # the interval to to perform health check
+      start_period: 10s # how long it takes to start the gps container
+                        # health checks won't count until after this period expires
+      retries: 1        # how many times to retry until the container becomes unhealty
+      timeout: 10s      # how long until the health check completes
+    restart: always
   # ------------------------------------------------------
   # autoheal - docker health monitoring container
   # ------------------------------------------------------
