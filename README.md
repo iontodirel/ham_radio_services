@@ -62,10 +62,6 @@ This will build the gps container, and then run it with hardware access, and ope
 
 This is primarily used as a **documented use case**, as the project was specifically designed to be hackable and accomodate many hardware and service variations.
 
-## Volume level
-
-Use alsamixer to *one time* adjust the sound level of your sound card. This is not typically necessary, and the defaults are just fine.
-
 **Hardware requirements:**
 
 - Digirig
@@ -90,6 +86,10 @@ Use the `find_devices` utility to find your digirig serial port `serial number`,
 Update the `digirig_config.json` file to find your sound card, based on the information from find_devices.
 
 Run everything with `docker compose build` followed by `docker compose up`.
+
+### Volume level
+
+Use alsamixer to *one time* adjust the sound level of your sound card. This is not typically necessary, and the defaults are just fine.
 
 **THAT'S IT THE END**
 

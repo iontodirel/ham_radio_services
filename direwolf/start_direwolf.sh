@@ -8,19 +8,34 @@
 # **************************************************************** #
 
 # NOTE: Please modify the path to 'find_devices' as appropriate by updating FIND_DEVICES
-: "${FIND_DEVICES:=/find_devices/find_devices}"
+: "${FIND_DEVICES:=/find_devices/find_devices}" # local only
 # Generic configuration in the same directory as the script
 : "${_DIREWOLF_CONTAINER_FD_CONFIG:=digirig_config.json}"
 # Can simply remain the same
-: "${OUT_JSON:=output.json}"
+: "${OUT_JSON:=output.json}" # local only
+: "${_DIREWOLF_CONTAINER_CONFIG_FILE:=/direwolf/config.json}"
 # Update with your own direwolf.conf file and location
 # this file is located in the same directory as this script
-: "${DIREWOLF_CONFIG_FILE:=direwolf.conf}"
+: "${DIREWOLF_WORKING_CONFIG_FILE:=/direwolf.conf}" # local copy, local only
 # Set by docker compose
 : "${_DIREWOLF_CONTAINER_AGWP_PORT:=8000}"
 : "${_DIREWOLF_CONTAINER_KISS_PORT:=8001}"
 : "${MYCALL:=N0CALL}"
 : "${_DIREWOLF_CONTAINER_LOG_DIR:=/direwolf/logs}"
+
+echo "start_direwolf.sh script variables:"
+echo "    \$FIND_DEVICES=$FIND_DEVICES"
+echo "    \$_DIREWOLF_CONTAINER_FD_CONFIG=$_DIREWOLF_CONTAINER_FD_CONFIG"
+echo "    \$OUT_JSON=$OUT_JSON"
+echo "    \$_DIREWOLF_CONTAINER_CONFIG_FILE=$_DIREWOLF_CONTAINER_CONFIG_FILE"
+echo "    \$DIREWOLF_WORKING_CONFIG_FILE=$DIREWOLF_WORKING_CONFIG_FILE"
+echo "    \$_DIREWOLF_CONTAINER_AGWP_PORT=$_DIREWOLF_CONTAINER_AGWP_PORT"
+echo "    \$_DIREWOLF_CONTAINER_KISS_PORT=$_DIREWOLF_CONTAINER_KISS_PORT"
+echo "    \$MYCALL=$MYCALL"
+echo "    \$_DIREWOLF_CONTAINER_LOG_DIR=$_DIREWOLF_CONTAINER_LOG_DIR"
+
+echo "Copying config from $_DIREWOLF_CONTAINER_CONFIG_FILE to $DIREWOLF_WORKING_CONFIG_FILE, and using $DIREWOLF_WORKING_CONFIG_FILE"
+cp $_DIREWOLF_CONTAINER_CONFIG_FILE $DIREWOLF_WORKING_CONFIG_FILE
 
 echo "Using \"$_DIREWOLF_CONTAINER_FD_CONFIG\" to find devices using find_devices"
 echo "See https://github.com/iontodirel/find_devices"
@@ -85,23 +100,23 @@ fi
 echo "Using audio device \"$audio_device\" and serial port for PTT \"$serial_port\""
 
 # if config file does not exist then exit
-if ! test -f "$DIREWOLF_CONFIG_FILE"
+if ! test -f "$DIREWOLF_WORKING_CONFIG_FILE"
 then
-    echo "Error: No Direwolf config file found \"$DIREWOLF_CONFIG_FILE\""
+    echo "Error: No Direwolf config file found \"$DIREWOLF_WORKING_CONFIG_FILE\""
     exit 1
 fi
 
 # replace soundard id in direwolf.conf file
-sed -i "s/ADEVICE.*/ADEVICE $audio_device/" $DIREWOLF_CONFIG_FILE
+sed -i "s/ADEVICE.*/ADEVICE $audio_device/" $DIREWOLF_WORKING_CONFIG_FILE
 # replace PTT in direwolf.conf file
-sed -i "s|PTT.*|PTT $serial_port RTS|" "$DIREWOLF_CONFIG_FILE"
+sed -i "s|PTT.*|PTT $serial_port RTS|" "$DIREWOLF_WORKING_CONFIG_FILE"
 
 # replace callsign in direwolf.conf file
-sed -i "s/MYCALL.*/MYCALL $MYCALL/" $DIREWOLF_CONFIG_FILE
+sed -i "s/MYCALL.*/MYCALL $MYCALL/" $DIREWOLF_WORKING_CONFIG_FILE
 
 # replace AGWPORT and KISSPORT in direwolf.conf file
-sed -i "s/AGWPORT.*/AGWPORT $_DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_CONFIG_FILE
-sed -i "s/KISSPORT.*/KISSPORT $_DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_FILE
+sed -i "s/AGWPORT.*/AGWPORT $_DIREWOLF_CONTAINER_AGWP_PORT/" $DIREWOLF_WORKING_CONFIG_FILE
+sed -i "s/KISSPORT.*/KISSPORT $_DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_WORKING_CONFIG_FILE
 
 #
 # Start direwolf
@@ -110,4 +125,4 @@ sed -i "s/KISSPORT.*/KISSPORT $_DIREWOLF_CONTAINER_KISS_PORT/" $DIREWOLF_CONFIG_
 echo "Starting direwolf with callsign '$MYCALL', devices '$audio_device' '$serial_port', and ports '$_DIREWOLF_CONTAINER_AGWP_PORT', '$_DIREWOLF_CONTAINER_KISS_PORT'"
 echo ""
 
-/usr/bin/direwolf -t 0 -a 10 -c $DIREWOLF_CONFIG_FILE -l $_DIREWOLF_CONTAINER_LOG_DIR 2>&1 | tee -a $_DIREWOLF_CONTAINER_LOG_DIR/direwolf-stdout.log
+/usr/bin/direwolf -t 0 -a 10 -c $DIREWOLF_WORKING_CONFIG_FILE -l $_DIREWOLF_CONTAINER_LOG_DIR 2>&1 | tee -a $_DIREWOLF_CONTAINER_LOG_DIR/direwolf-stdout.log

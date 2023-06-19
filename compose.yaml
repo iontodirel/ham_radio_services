@@ -28,15 +28,18 @@ services:
     build: ./direwolf
     image: direwolf
     expose:
-      - ${DIREWOLF_HOST_AGWP_PORT}
-      - ${DIREWOLF_HOST_KISS_PORT}
+      - ${DIREWOLFM_HOST_AGWP_PORT}
+      - ${DIREWOLFM_HOST_KISS_PORT}
     ports:
-      - "${DIREWOLF_HOST_AGWP_PORT}:${_DIREWOLF_CONTAINER_AGWP_PORT}"
-      - "${DIREWOLF_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
+      - "${DIREWOLFM_HOST_AGWP_PORT}:${_DIREWOLF_CONTAINER_AGWP_PORT}"
+      - "${DIREWOLFM_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
     volumes:
-      - ${DIREWOLF_HOST_FD_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
+      # find_devices configuration
+      - ${DIREWOLFM_HOST_FD_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
       # for logging
-      - ${DIREWOLF_HOST_LOG_DIR}:${_DIREWOLF_CONTAINER_LOG_DIR}
+      - ${DIREWOLFM_HOST_LOG_DIR}:${_DIREWOLF_CONTAINER_LOG_DIR}
+      # Direwolf config
+      - ${DIREWOLFM_HOST_CONFIG_FILE}:${_DIREWOLF_CONTAINER_CONFIG_FILE}
     networks:
       - direwolf_network
     privileged: true

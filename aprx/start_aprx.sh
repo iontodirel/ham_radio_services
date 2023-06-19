@@ -20,7 +20,19 @@
 : "${APRX_CONFIG_FILE:=/aprx/aprx.conf}" # local variable, not set by .env
 : "${_APRX_CONTAINER_LOG_DIR:=/aprx/logs}"
 : "${_APRX_CONTAINER_SVC_CONF_FILE:=/services.json}"
-: "${_APRX_CONTAINER_DISABLED:=/var/run/aprx_disabled}"
+
+echo "start_aprx.sh script variables:"
+echo "    \$MYCALL=$MYCALL"
+echo "    \$LAT=$LAT"
+echo "    \$LON=$LON"
+echo "    \$APRSIS_PASSCODE=$APRSIS_PASSCODE"
+echo "    \$_DIREWOLF_CONTAINER_SERVICE=$_DIREWOLF_CONTAINER_SERVICE"
+echo "    \$_DIREWOLF_CONTAINER_AGWP_PORT=$_DIREWOLF_CONTAINER_AGWP_PORT"
+echo "    \$_DIREWOLF_CONTAINER_KISS_PORT=$_DIREWOLF_CONTAINER_KISS_PORT"
+echo "    \$_APRX_CONTAINER_CONFIG_FILE=$_APRX_CONTAINER_CONFIG_FILE"
+echo "    \$APRX_CONFIG_FILE=$APRX_CONFIG_FILE"
+echo "    \$_APRX_CONTAINER_LOG_DIR=$_APRX_CONTAINER_LOG_DIR"
+echo "    \$_APRX_CONTAINER_SVC_CONF_FILE=$_APRX_CONTAINER_SVC_CONF_FILE"
 
 echo "Copying config from $_APRX_CONTAINER_CONFIG_FILE to $APRX_CONFIG_FILE, and using $APRX_CONFIG_FILE"
 cp $_APRX_CONTAINER_CONFIG_FILE $APRX_CONFIG_FILE
@@ -41,6 +53,19 @@ fi
 
 aprx_enable_service=$(jq -r '.aprx // "" ' $_APRX_CONTAINER_SVC_CONF_FILE)
 
+# try to connect to Direwolf and make sure the socket is up
+# no point in running the digipeater without the radio
+
+nc -zv $_DIREWOLF_CONTAINER_SERVICE $_DIREWOLF_CONTAINER_KISS_PORT > /dev/null 2>&1
+nc_return_code=$?
+
+if [ "$nc_return_code" -eq 0 ]; then
+    echo "Test connection to Direwolf successful"
+else
+    echo "Error: Connection to Direwolf unsuccessful"
+    exit 1
+fi
+
 #
 # replace mycall, passcode, tcp-device and myloc in aprx.conf file, using sed
 #
@@ -53,8 +78,6 @@ sed -i "s|aprxlog.*|aprxlog $_APRX_CONTAINER_LOG_DIR/aprx.log|" $APRX_CONFIG_FIL
 sed -i "s|dprslog.*|dprslog $_APRX_CONTAINER_LOG_DIR/dprs.log|" $APRX_CONFIG_FILE
 
 if [[ "$aprx_enable_service" == "disabled" ]]; then
-
-    touch $_APRX_CONTAINER_DISABLED
 
     echo "aprx service state is disabled, waiting for service state change to enabled"
 
@@ -79,8 +102,6 @@ if [[ "$aprx_enable_service" == "disabled" ]]; then
     done
 
 fi
-
-rm -rf $_APRX_CONTAINER_DISABLED
 
 echo "Starting aprx with:"
 echo "    Callsign \"$MYCALL\""

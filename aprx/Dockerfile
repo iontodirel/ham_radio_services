@@ -12,7 +12,7 @@ ARG _APRX_CONTAINER_HEALTH_SCRIPT
 RUN apt-get update -y
 RUN apt-get install -y aprx
 RUN apt-get install -y gcc gcc-13 g++ g++-13 make cmake git libgps-dev
-RUN apt-get install -y jq inotify-tools
+RUN apt-get install -y jq inotify-tools netcat-traditional
 
 RUN git clone https://github.com/iontodirel/gps_util
 WORKDIR /gps_util
