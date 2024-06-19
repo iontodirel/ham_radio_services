@@ -1,0 +1,65 @@
+
+# **************************************************************** #
+# ham_docker_container - Containers for APRS and ham radio         #
+# Version 0.1.0                                                    #
+# https://github.com/iontodirel/ham_docker_container               #
+# Copyright (c) 2023 Ion Todirel                                   #
+# **************************************************************** #
+#
+# aprx.conf
+#
+# Configuration for a local fill-in TX igate
+#
+
+# DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+@mycall N0CALL
+# DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+@myloc lat 0000.00N lon 00000.00W
+
+<aprsis>
+  # DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+  @passcode 0000
+  # DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+  @server    rotate.aprs2.net
+  heartbeat-timeout 1m
+</aprsis>
+<logging>
+  pidfile /var/run/aprx.pid
+  @rflog /aprx/aprx-rf.log
+  @aprxlog /aprx/aprx.log
+  @dprslog /aprx/dprs.log
+</logging>
+<interface>
+  # DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+  @tcp-device 127.0.0.1 8001 KISS
+  callsign     $mycall
+  tx-ok        true
+  telem-to-is  true
+</interface>
+<beacon>
+  beaconmode both
+  cycle-size  45m
+  # NOTE: select between fetching a position via GPS using the fetch_gps.sh script
+  # or using a fixed position
+  # When using fetch_gps.sh, the beacon text is returned via stdout
+  #
+  # Using live GPS data to form a packet
+  # TODO: Uncomment below as needed:
+  #
+  # beacon exec ./fetch_gps.sh
+  # beacon exec pwsh -ExecutionPolicy Bypass -File /printposition.ps1
+  #
+  # Using fixed coordinates
+  # TODO: Uncomment below as needed:
+  #
+  beacon interface $mycall via WIDE1-1 symbol "I#" $myloc comment "Downtown Bellevue fill-in Digipeater"
+  #beacon exec "pwsh -ExecutionPolicy Bypass -File /printposition.ps1"
+</beacon>
+<digipeater>
+  transmitter     $mycall
+  <source>
+    source        $mycall
+    relay-type    directonly
+    viscous-delay  5
+  </source>
+</digipeater>
