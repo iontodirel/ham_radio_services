@@ -1,15 +1,15 @@
 {
     "search_criteria": {
         "port": {
-            "serial": "f6a69ba44567ec119b112342ef680de7"
+            "serial": "b2692f9efa7ced118522bc6c4fc49859"
         }
     },
     "volume_control": {
         "controls": [
             {
                 "name": "Speaker",
-                "playback_value": "100",
-                "playback_value_percent": "100",
+                "playback_value": "0",
+                "playback_value_percent": "0",
                 "playback_value_test_max_error": "5"
             },
             {
