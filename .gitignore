@@ -4,3 +4,4 @@ services/*
 service_control_ws/node_modules/*
 gps_log/node_modules/*
 webapp/node_modules/*
+webservice/node_modules/*

@@ -5,19 +5,18 @@
 # Copyright (c) 2023 Ion Todirel                                   #
 # **************************************************************** #
 
-# DO NOT CHANGE, it will automatically be replaced in the container by start_direwolf.sh
-ADEVICE plughw:0,0
-# DO NOT CHANGE, it will automatically be replaced in the container by start_direwolf.sh
+# DO NOT CHANGE, it will automatically be replaced in the container by entrypoint.ps1
+@ADEVICE plughw:0,0
+# DO NOT CHANGE, it will automatically be replaced in the container by entrypoint.ps1
 # replace PTT with your own serial port if needed,
 # some devices like Signalink have VOX and don't need
-# the PTT line, comment it if the case, but also update start_direwolf.sh
-PTT /dev/ttyXYZ RTS
+# the PTT line, comment it if the case, but also update entrypoint.ps1
+@PTT /dev/ttyXYZ RTS
 ACHANNELS 1
 CHANNEL 0
 DTMF
 MODEM 1200
-# DO NOT CHANGE, it will automatically be replaced in the container by start_direwolf.sh
-MYCALL N0CALL
-AGWPORT 8000
-KISSPORT 8001
-FIX_BITS 1
+# DO NOT CHANGE, it will automatically be replaced in the container by entrypoint.ps1
+@MYCALL N0CALL
+@AGWPORT 8000
+@KISSPORT 8001
