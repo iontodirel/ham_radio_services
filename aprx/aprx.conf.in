@@ -30,7 +30,7 @@
   @dprslog /aprx/dprs.log
 </logging>
 <interface>
-  # DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.sh
+  # DO NOT CHANGE, it will automatically be replaced in the container by start_aprx.shgit
   @tcp-device 127.0.0.1 8001 KISS
   callsign     $mycall
   tx-ok        true
