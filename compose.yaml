@@ -8,8 +8,6 @@ services:
   # ------------------------------------------------------
   # direwolfm - Direwolf modem container
   # ------------------------------------------------------
-  # uses configuration based on the .env file
-  # the settings here require no changes
   #
   # Exposes typically ports 8010 and 8020 to the host (this can be configured from .env)
   # Has a volume mounted to read the digirig_config.json or other files (this can be configured from .env)
@@ -24,100 +22,278 @@ services:
   # ------------------------------------------------------
   direwolfm:
     env_file:
-      - .env
-    build: ./direwolf
-    image: direwolf
-    expose:
-      - ${DIREWOLFM_HOST_AGWP_PORT}
-      - ${DIREWOLFM_HOST_KISS_PORT}
+      - ".env"
+    environment:
+      - SERVICE_NAME=${MODEM0_SERVICE_NAME}
+      - WS_SERVICE_NAME=${SVC_CONTROL_WS_SERVICE_NAME}
+      - WS_PORT=${SVC_CONTROL_WS_REST_PORT}
+    build:
+      context: .
+      dockerfile: ./direwolf/Dockerfile
+    image: "direwolf"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
     ports:
-      - "${DIREWOLFM_HOST_AGWP_PORT}:${_DIREWOLF_CONTAINER_AGWP_PORT}"
-      - "${DIREWOLFM_HOST_KISS_PORT}:${_DIREWOLF_CONTAINER_KISS_PORT}"
+      # exposing KISS and AGWP ports to the host
+      - "${MODEM0_AGWP_PORT}:${MODEM0_PRIV_AGWP_PORT}"
+      - "${MODEM0_KISS_PORT}:${MODEM0_PRIV_KISS_PORT}"
     volumes:
-      # find_devices configuration
-      - ${DIREWOLFM_HOST_FD_CONFIG}:${_DIREWOLF_CONTAINER_FD_CONFIG}
-      # for logging
-      - ${DIREWOLFM_HOST_LOG_DIR}:${_DIREWOLF_CONTAINER_LOG_DIR}
-      # Direwolf config
-      - ${DIREWOLFM_HOST_CONFIG_FILE}:${_DIREWOLF_CONTAINER_CONFIG_FILE}
+      # find_devices configuration, shared such that configuration
+      # can be changed without rebuilding the container
+      - ${MODEM0_FD_CONFIG_FILE_NAME}:${MODEM0_PRIV_FD_CONFIG_FILE_NAME}
+      # share volume with host, for logging, so Direwolf logs can be read on the host
+      - ${MODEM0_LOG_DIR}:${MODEM0_PRIV_LOG_DIR}
+      # Direwolf configuration, shared such that configuration
+      # can be changed (wiht automatic service restart) without rebuilding the container
+      - ${MODEM0_DW_CONFIG_FILE_NAME}:${MODEM0_PRIV_DW_CONFIG_FILE_NAME}
     networks:
-      - direwolf_network
+      - direwolfm_network
+      - service_network
     privileged: true
+    labels:
+      - "autoheal=true"
+      - "ham_docker_container_name=${MODEM0_SERVICE_NAME}"
+    depends_on:
+      - svc_control_ws
+    healthcheck:
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      interval: "10s"  # the interval to to perform health check
+      start_period: "60s" # how long it takes to start the container
+      retries: 1 # how many times to retry until the container becomes unhealty
+      timeout: "30s" # how long until the health check completes
+    restart: always
+  # ------------------------------------------------------
+  # direwolfl - Direwolf modem loopback container
+  # ------------------------------------------------------
+  direwolfl:
+    env_file:
+      - ".env"
+    environment:
+      - SERVICE_NAME=${MODEM1_SERVICE_NAME}
+      - WS_SERVICE_NAME=${SVC_CONTROL_WS_SERVICE_NAME}
+      - WS_PORT=${SVC_CONTROL_WS_REST_PORT}
+    build:
+      context: .
+      dockerfile: ./direwolf/Dockerfile
+    image: "direwolf"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    ports:
+      # exposing KISS and AGWP ports to the host
+      - "${MODEM1_AGWP_PORT}:${MODEM1_PRIV_AGWP_PORT}"
+      - "${MODEM1_KISS_PORT}:${MODEM1_PRIV_KISS_PORT}"
+    volumes:
+      # find_devices configuration, shared such that configuration
+      # can be changed without rebuilding the container
+      - ${MODEM1_FD_CONFIG_FILE_NAME}:${MODEM1_PRIV_FD_CONFIG_FILE_NAME}
+      # share volume with host, for logging, so Direwolf logs can be read on the host
+      - ${MODEM1_LOG_DIR}:${MODEM1_PRIV_LOG_DIR}
+      # Direwolf configuration, shared such that configuration
+      # can be changed (wiht automatic service restart) without rebuilding the container
+      - ${MODEM1_DW_CONFIG_FILE_NAME}:${MODEM1_PRIV_DW_CONFIG_FILE_NAME}
+    networks:
+      - service_network
+    privileged: true
+    labels:
+      - "autoheal=true"
+      - "ham_docker_container_name=${MODEM1_SERVICE_NAME}"
+    depends_on:
+      - svc_control_ws
+    healthcheck:
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      interval: "10s"  # the interval to to perform health check
+      start_period: "60s" # how long it takes to start the container
+      retries: 1 # how many times to retry until the container becomes unhealty
+      timeout: "30s" # how long until the health check completes
     restart: always
   # ------------------------------------------------------
   # aprx - repeater container
   # ------------------------------------------------------
   aprx:
     env_file:
-      - .env
+      - ".env"
+    environment:
+     - SERVICE_NAME=${APRX_SERVICE_NAME}
     build:
-      context: ./aprx
-      args:
-        _APRX_CONTAINER_HEALTH_SCRIPT: ${_APRX_CONTAINER_HEALTH_SCRIPT}
-    image: aprx
-    ports:
-      # These ports are for APRX accessing APRS-IS
-      - ${_APRSIS_SERVICE_PORT_A}:${_APRSIS_SERVICE_PORT_A}
-      - ${_APRSIS_SERVICE_PORT_B}:${_APRSIS_SERVICE_PORT_B}
+      context: .
+      dockerfile: ./aprx/Dockerfile
+    image: "aprx"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
     volumes:
       # for access to the aprx.conf file
-      - ${APRX_HOST_CONFIG_FILE}:${_APRX_CONTAINER_CONFIG_FILE}
-      # for logging
-      - ${APRX_HOST_LOG_DIR}:${_APRX_CONTAINER_LOG_DIR}
-      # service config
-      - ${_APRX_HOST_SVC_CONFIG_FILE}:${_APRX_CONTAINER_SVC_CONF_FILE}
+      - ${APRX_CONFIG_FILE}:${APRX_PRIV_CONFIG_FILE}
+      # for logging being accessible on the host
+      - ${APRX_LOG_DIR}:${APRX_PRIV_LOG_DIR}
     networks:
-      - direwolf_network
-      - gps_network
+      - direwolfm_network
+      - service_network
     depends_on:
       - direwolfm
-      - gps
+      - svc_control_ws
     labels:
-      - ${AUTOHEAL_ENABLE_RESTART}
+      - autoheal=true
+      - ham_docker_container_name=${APRX_SERVICE_NAME}
     healthcheck:
-      test: ["CMD", "${_APRX_CONTAINER_HEALTH_SCRIPT}"]
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
       interval: 10s # the interval to to perform health check
-      start_period: 30s # how long it takes to start the aprx container
+      start_period: 60s # how long it takes to start the aprx container
                         # health checks won't count until after this period expires
       retries: 1        # how many times to retry until the container becomes unhealty
       timeout: 30s      # how long until the health check completes
     restart: always
-  # ------------------------------------------------------
-  # gps - gpsd container
-  # ------------------------------------------------------
-  # exposes port 8888 (typically), can be changed with GPS_HOST_PORT from .env
-  # can use "cgps -s localhost:8888" on the host to check (apt-get install gpsd-clients)
-  #
-  # This container is given access to the host via --privileged such
-  # that we can access USB serial ports
+  # # ------------------------------------------------------
+  # # gps - gpsd container
+  # # ------------------------------------------------------
+  # # exposes port 8888 (typically), can be changed with GPS_HOST_PORT from .env
+  # # can use "cgps -s localhost:8888" on the host to check (apt-get install gpsd-clients)
+  # #
+  # # This container is given access to the host via --privileged such
+  # # that we can access USB serial ports
   gps:
     env_file:
-      - .env
+      - ".env"
+    environment:
+      - SERVICE_NAME=${GPS_SERVICE_NAME}
     build:
-      context: ./gps
-      args:
-        _GPS_CONTAINER_HEALTH_SCRIPT: ${_GPS_CONTAINER_HEALTH_SCRIPT}
-    image: gps  
-    expose:
-      - ${GPS_HOST_PORT}
+      context: .
+      dockerfile: ./gps/Dockerfile
+    image: "gps"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "10"
     ports:
-      - "${GPS_HOST_PORT}:${_GPS_CONTAINER_PORT}"
+      # exposes GPS service onto the host
+      - "${GPS_GPSD_PORT}:${GPS_PRIV_GPSD_PORT}"
     volumes:
-      - ${GPS_HOST_FD_CONFIG}:${_GPS_CONTAINER_FD_CONFIG}
-      # service config
-      - ${_GPS_HOST_SVC_CONFIG_FILE}:${_GPS_CONTAINER_SVC_CONF_FILE}
+      # enables updating find_devices config without rebuilding the container
+      - ${GPS_FD_CONFIG_FILE_NAME}:${GPS_PRIV_FD_CONFIG_FILE_NAME}
     networks: 
       - gps_network
+      - service_network
     privileged: true
     labels:
-      - ${AUTOHEAL_ENABLE_RESTART}
+      - "autoheal=true"
+      - "ham_docker_container_name=${GPS_SERVICE_NAME}"
     healthcheck:
-      test: ["CMD", "${_GPS_CONTAINER_HEALTH_SCRIPT}"]
-      interval: 10s # the interval to to perform health check
-      start_period: 10s # how long it takes to start the gps container
-                        # health checks won't count until after this period expires
-      retries: 1        # how many times to retry until the container becomes unhealty
-      timeout: 10s      # how long until the health check completes
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      interval: "10s"  # the interval to to perform health check
+      start_period: "30s" # how long it takes to start the container
+      retries: 1 # how many times to retry until the container becomes unhealty
+      timeout: "15s" # how long until the health check completes
+    depends_on:
+      - svc_control_ws
+    restart: always
+  # ------------------------------------------------------
+  # db - database container
+  # ------------------------------------------------------
+  db:
+    env_file:
+      - ".env"
+    build:
+      context: .
+      dockerfile: ./db/Dockerfile
+    image: "db"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    labels:
+      - autoheal=true
+      - "ham_docker_container_name=${DB_MYSQL_SERVICE_NAME}"
+    ports:
+      - ${DB_MYSQL_PORT}:${DB_PRIV_MYSQL_PORT}
+    volumes:
+      - ${DB_MYSQL_DATA_DIR}:${DB_PRIV_MYSQL_DATA_DIR}
+      - ./settings.json:${DB_PRIV_SETTINGS_FILE_NAME}
+    healthcheck:
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      interval: 10s
+      start_period: 60s
+      retries: 1
+      timeout: 20s
+    networks: 
+      - db_network
+    restart: always
+  # ------------------------------------------------------
+  # svc_control_ws - status web service container
+  # ------------------------------------------------------
+  svc_control_ws:
+    env_file: 
+      - ".env"
+    build:
+      context: .
+      dockerfile: ./webservice/Dockerfile
+    image: "service_control_ws"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    labels:
+      - autoheal=true
+      - "ham_docker_container_name=${SVC_CONTROL_WS_SERVICE_NAME}"
+    ports:
+      - ${SVC_CONTROL_WS_WS_PORT}:${SVC_CONTROL_WS_WS_PORT}
+      - ${SVC_CONTROL_WS_REST_PORT}:${SVC_CONTROL_WS_REST_PORT}
+    volumes:
+      - ${SVC_CONTROL_WS_DOCKER_SOCKET}:${SVC_CONTROL_WS_DOCKER_SOCKET}
+      - ./settings.json:${SVC_CONTROL_WS_PRIV_SETTINGS_FILE_NAME}
+    healthcheck:
+      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      interval: 10s
+      start_period: 30s
+      retries: 1
+      timeout: 10s
+    networks: 
+      - db_network
+      - service_network
+    depends_on:
+      - db
+    restart: always
+    privileged: true
+  # ------------------------------------------------------
+  # webapp - web administration app
+  # ------------------------------------------------------
+  webapp:
+    env_file: 
+      - ".env"
+    build:
+      context: .
+      dockerfile: ./webapp/Dockerfile
+    image: "webapp"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    labels:
+      - autoheal=true
+      - "ham_docker_container_name=${WEBAPP_SERVICE_NAME}"
+    ports:
+      - ${WEBAPP_PORT}:${WEBAPP_PORT}
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      start_period: 30s
+      retries: 1
+      timeout: 10s
+    networks:
+      - service_network
+    depends_on:
+      - svc_control_ws
     restart: always
   # ------------------------------------------------------
   # autoheal - docker health monitoring container
@@ -128,15 +304,26 @@ services:
     env_file:
       - .env
     image: willfarrell/autoheal:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    labels:
+      - "ham_docker_container_name=${AUTOHEAL_SERVICE_NAME}"
     tty: true
     environment:
       - AUTOHEAL_CONTAINER_LABEL=all
     volumes:
-      - ${_AUTOHEAL_DOCKER_SOCK}:${_AUTOHEAL_DOCKER_SOCK}
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
 networks:
-  direwolf_network:
+  service_network:
+    name: ws
+    driver: bridge
+  direwolfm_network:
     driver: bridge
   gps_network:
     driver: bridge
-
+  db_network:
+    driver: bridge
