@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HAM RADIO ADMINISTRATION</title>
+  <link rel="stylesheet" href="/jquery-ui/themes/base/jquery-ui.min.css">
+  <link rel="stylesheet" href="/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/jquery/jquery.min.js"></script>
+  <script src="/jquery-ui/jquery-ui.min.js"></script>
+  <script src="/script.js"></script>
+  <script>
+    $( function() {
+      $( "#tabs" ).tabs({
+        active: 0
+      }).find('.ui-tabs-nav')
+        .find('li')
+            .css('display','inline-block')
+            .css('float','none')
+            .css('vertical-align','bottom');
+    });
+
+    $(document).ready(function() {
+      $('.menu-icon').click(function(e){
+        var offset = $(this).offset();
+        $('.menu').css({
+            top: offset.top + $(this).outerHeight(),
+            left: offset.left
+        }).slideToggle();
+        e.stopPropagation(); 
+      });
+    
+      $('.close-icon').click(function(){
+          $('.menu').fadeOut();
+      });
+
+      $(document).click(function(e) {
+        if (!$(e.target).closest('.menu').length && !$(e.target).closest('.menu-icon').length) {
+          $('.menu').slideUp();
+        }
+      });
+
+      $('.nav-link').click(function(e){
+        e.preventDefault();
+        $('.menu').slideUp();
+
+        var target = $(this).attr('href');
+        $('.section').removeClass('active');
+        $(target).addClass('active');
+
+        var targetId = $(this).attr("href").substring(1); // Remove leading '#'
+        localStorage.setItem("lastTab", targetId);                
+      });
+
+
+      // on load, unmark all active sections
+      // then select a section based on the local storage data
+      const lastTab = localStorage.getItem("lastTab");
+      if (lastTab) {
+         $('.section').removeClass('active');
+          $("#" + lastTab).addClass("active");
+          $('a[href="#' + lastTab + '"]').parent().addClass("active");
+      }
+    });
+
+    $(function() {
+      $(document).tooltip({
+       position: {
+         my: "left top",
+         at: "top-2"
+       },
+       content: function() {
+        // Reference the element that triggered the tooltip using "this"
+         const title = $(this).attr('title');
+         return `<b>${title}</b>`;
+       }
+      });
+    });
+  </script>
+  <script>
+    window.onload = async function() {
+      await initConfig();
+      await initializeAndPopulateServicesTable();      
+      await beginUpdateServicesTable();
+      await retrieveAndPopulateServiceSettings();
+      await testCppWebSocket();    
+    }
+  </script>
+  <script>
+    // Example of setting values programmatically
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelector('.position-value[data-context="utc-time"]').innerText = '1:00:00PM 5/30/2024';
+      document.querySelector('.position-value[data-context="local-time"]').innerText = '1:00:00PM 5/30/2024';
+      document.querySelector('.position-value[data-context="latitude-dd"]').innerText = '24.12345678';
+      document.querySelector('.position-value[data-context="longitude-dd"]').innerText = '-128.12345678';
+      document.querySelector('.position-value[data-context="latitude-ddm"]').innerText = '48 degrees 15.123 minutes N';
+      document.querySelector('.position-value[data-context="longitude-ddm"]').innerText = '123 degrees 45.678 minutes W';
+      document.querySelector('.position-value[data-context="speed"]').innerText = '12 MPH';
+      document.querySelector('.position-value[data-context="heading"]').innerText = '60 degrees';
+      document.querySelector('.position-value[data-context="altitude"]').innerText = '350 feet';
+      document.querySelector('.position-value[data-context="fix-age"]').innerText = '45 sec';
+      document.querySelector('.position-value[data-context="fix-mode"]').innerText = '3D';
+      document.querySelector('.position-value[data-context="latitude-error"]').innerText = '2 ft';
+      document.querySelector('.position-value[data-context="longitude-error"]').innerText = '3 ft';
+      document.querySelector('.position-value[data-context="altitude-error"]').innerText = '6 ft';
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+
+    <div class="menu-icon">
+      <div class="line"></div>
+      <div class="line"></div>
+      <div class="line"></div>
+    </div>  
+
+    <nav class="menu">
+      <div class="close-icon">&times;</div>
+      <ul>
+        <li><a href="#services2" class="nav-link">SERVICES</a></li>
+        <li><a href="#system" class="nav-link">SYSTEM</a></li>
+        <li><a href="#position" class="nav-link">POSITION</a></li>
+        <li><a href="#incoming" class="nav-link">IN/OUT</a></li>
+        <li><a href="#messages" class="nav-link">MESSAGES</a></li>
+        <li><a href="#settings" class="nav-link">SETTINGS</a></li>
+        <li><a href="#logs" class="nav-link">LOGS</a></li>
+        <li><a href="#maps" class="nav-link">MAPS</a></li>
+      </ul>
+    </nav>
+
+    <div class="header">
+      <h1>HAM RADIO SERVICES</h1>
+      <p>Dockerized high-reliability services supporting APRS, CAT and hardware control, providing capabilities for packet
+        radio, messaging, mapping, location tracking, weather reporting and digipeating.</p>
+    </div>
+
+    <section id="messages" class="section">
+      <div class="section_header">MESSAGES</div>
+      <div class="tab-content">
+        <div>
+          Send APRS messages, list received messages, or see the messages history.                
+        </div>
+        <div>
+          <h3>Send a message</h3>        
+        </div>
+        <label style="font-weight: bold;">Type:</label>
+        <select style="width: 100%">
+          <option value="option2">APRS</option>
+          <option value="option1">Winlink</option>
+          <option value="option4">AX.25</option>
+        </select>
+        <div class="spacer"></div>
+        <label style="font-weight: bold;">Send Count/Interval:</label>
+        <select style="width: 100%">
+          <option value="option2">Five (1s, 4s, 10s, 30s, 60s)</option>
+          <option value="option1">Once</option>
+          <option value="option4">Three (1s, 10s, 30s)</option>
+          <option value="option3">Five (1s, 10s, 30s, 60s, 120s)</option>
+        </select>
+        <div class="spacer"></div>
+        <label style="font-weight: bold;">Path:</label>
+        <input type="text" name="product" list="productName" style="width: 100%" value="WIDE1-1, WIDE2-2" />
+        <datalist style="width: 100%" id="productName">
+          <option>WIDE1-1, WIDE2-2</option>
+          <option>WIDE1-1, WIDE2-1</option>
+        </datalist>
+        <div class="spacer"></div>
+        <label style="font-weight: bold;">From:</label>
+        <input style="width: 100%;" value="N0CALL-0" />
+        <div class="spacer"></div>
+        <label style="font-weight: bold;">To:</label>
+        <input style="width: 100%;" value="N0CALL-5" />
+        <div class="spacer"></div>
+        <label style="font-weight: bold;">Message:</label>
+        <textarea style="width: 100%; resize: none;" maxlength="100" rows="4" required>hello world</textarea>
+        <div class="spacer"></div>
+        <button style="float: right;" onclick="">Send Message</button>
+    
+        <div>
+          <h3>Message history</h3>        
+        </div>
+      </div>
+    </section>
+
+    <section id="services2" class="section active">
+      <div class="section_header">SERVICES</div>
+      <div class="tab-content">
+        <div>
+          The services listed below can each be <i><b>disabled</b></i>, <i><b>enabled</b></i>, or <i><b>restarted</b></i> as needed.
+        </div>
+        <div class="spacer"></div>
+        <div>
+          When a service is disabled, it initially transitions to an <i>unhealthy</i> state before restarting and awaiting re-enablement. Following a service disable action, it is expected that the service will briefly appear as <i>unhealthy</i>.
+        </div>
+        <div class="spacer"></div>
+        <div>
+          <b>The services</b> state is automatically updated <i>typically</i> every 5 seconds.
+        </div>
+        <div class="spacer"></div>
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <table class="services" id="services">
+            <thead>
+              <th class="services-th-td">Name</th>
+              <th class="services-th-td">Status</th>
+              <th class="services-th-td">Start Date (UTC)</th>
+              <th class="services-th-td">Uptime</th>
+              <th class="services-th-td">Enable</th>
+              <th class="services-th-td">Disable</th>
+              <th class="services-th-td">Restart</th>
+            </thead>
+            <tbody id="serviceBody">
+            </tbody>
+          </table>    
+        </div>
+      
+        <div id="serviceSmall" class="tile-container">
+        </div>
+      
+        <p>The services perform self <b>health checks</b> every 10 seconds. These checks typically include verifying database
+          connections, detecting the presence of a USB sound card and USB serial port, ensuring the USB sound card volume is
+          correct, confirming successful TCP connections to services, and validating GPS lock and coordinates. If a service
+          fails its health check, it will automatically restart.</p>
+        <p>Most services depend on the <b>web service</b>. The database is used for telemetry, settings, incoming and outgoing
+          APRS traffic, statistics, etc.</p>
+        <p>When restarting all services, the <b>db</b> and <b>svc_control_ws</b> services won't be restarted. But they can be
+          restarted in the services table above.</p>
+        <p><b style="color:red">Restart all services:</b> <button onclick="handleRestartAllServicesButtonClick()">Restart All</button></p>
+      </div>
+    </section>
+
+    <section id="system" class="section">
+      <div class="section_header">SYSTEM</div>
+    </section>
+
+    <section id="position" class="section">
+      <div class="section_header">POSITION</div>
+      <div class="tab-content">
+        <div><i>If available</i> a GNSS device provides time and position information.</div>
+        <div class="spacer"></div>
+        <div style="font-weight: normal;">Copy DD coordinates: <button onclick="">Copy to Clipboard</button></div>
+        <div style="font-weight: normal;">Copy DDM coordinates: <button onclick="">Copy to Clipboard</button></div>
+        <div class="spacer"></div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">UTC Time:</label> 
+          <div class="position-value" style="flex: 1;" data-context="utc-time">12:32:10PM 5/30/2024</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Local Time:</label> 
+          <div class="position-value" style="flex: 1;"  data-context="local-time">12:32:10PM 5/30/2024</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Latitude (DD):</label> 
+          <div class="position-value" style="flex: 1;" data-context="latitude-dd">23.36252252</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Longitude (DD):</label> 
+          <div class="position-value" style="flex: 1;" data-context="longitude-dd">-124.2422223</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Latitude (DDM):</label> 
+          <div class="position-value" style="flex: 1;" data-context="latitude-ddm">47 degrees 35.124 minutes N</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Longitude (DDM):</label> 
+          <div class="position-value" style="flex: 1;" data-context="longitude-ddm">122 degrees 10.035 minutes W</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Speed:</label> 
+          <div class="position-value" style="flex: 1;" data-context="speed">10 MPH</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Heading:</label> 
+          <div class="position-value" style="flex: 1;" data-context="heading">52 degrees</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Altitude:</label> 
+          <div class="position-value" style="flex: 1;" data-context="altitude">336 feet</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Climb rate:</label> 
+          <div class="position-value" style="flex: 0 1 auto; margin-right: 10px;" data-context="altitude-error">12</div>      
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Fix age:</label> 
+          <div class="position-value" style="flex: 1;" data-context="fix-age">40 sec</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Fix mode:</label> 
+          <div class="position-value" style="flex: 1;" data-context="fix-mode">3D</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Latitude error:</label> 
+          <div class="position-value" style="flex: 1;" data-context="latitude-error">1 ft</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none;  word-break: break-all; overflow-wrap: break-word;">Longitude error:</label> 
+          <div class="position-value" style="flex: 1;" data-context="longitude-error">2 ft</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Altitude error:</label> 
+          <div class="position-value" style="flex: 1;" data-context="altitude-error">5 ft</div>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Satellites:</label> 
+          <div class="position-value" style="flex: 1;" data-context="altitude-error">12</div>
+        </div>   
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Max altitude:</label> 
+          <div class="position-value" style="flex: 0 1 auto; margin-right: 10px;" data-context="altitude-error">12</div>
+          <button style="flex: 0 0 auto;" onclick="">Reset</button>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Max speed:</label> 
+          <div class="position-value" style="flex: 0 1 auto; margin-right: 10px;" data-context="altitude-error">12</div>
+          <button style="flex: 0 0 auto;" onclick="">Reset</button>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Max climb:</label> 
+          <div class="position-value" style="flex: 0 1 auto; margin-right: 10px;" data-context="altitude-error">12</div>
+          <button style="flex: 0 0 auto;" onclick="">Reset</button>
+        </div>
+        <div style="display: flex;">
+          <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">Total distance:</label> 
+          <div class="position-value" style="flex: 0 1 auto; margin-right: 10px;" data-context="altitude-error">12</div>
+          <button style="flex: 0 0 auto;" onclick="">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings" class="section">
+      <div class="section_header">SETTINGS</div>
+      <div class="tab-content">  
+        <div style="margin-bottom: 0px;">
+          The settings are read-only. <b>If you like to change the settings</b>, edit the settings.json file directly, and rebuild and re-create the Docker containers.
+          <div class="spacer"></div>
+          This page displays various service settings. If a service setting is marked as <i>visible</i> and <i>editable</i>, it will appear in this list.
+          <div class="spacer"></div>
+          You can change the contents of the settings.json file if you would like more settings to appear in this list by setting <i>visible</i> and <i>editable</i> to '<i>true</i>'.
+          <p><b>Refresh settings:</b> <button onclick="handleRefreshSettings()">Refresh All</button></p> 
+          <!-- Use this page to set various service settings. If a service setting is marked as <i>visible</i> and <i>editable</i>, it will appear in this list.
+          You can change the contents of the settings.json file if you would like more settings to appear in this list by setting <i>visible</i> and <i>editable</i> to '<i>true</i>'.
+          <div class="spacer"></div>
+          <b>Please be careful as you make changes</b>, incorrect settings migh cause the system to become offline or inaccessible.
+          <div class="spacer"></div>
+          Saving or Resetting the settings will not apply them, you might need to rebuild and recreate the Docker containers.
+          <p><b style="color:red">Save settings:</b> <button onclick="handleSaveSettings()">Save All</button></p>
+          <p><b style="color:red">Reset settings:</b> <button onclick="handleSaveSettings()">Reset All</button></p>
+          <p><b>Refresh settings:</b> <button onclick="handleRefreshSettings()">Refresh All</button></p> -->
+          <!-- <div class="spacer"></div>              -->
+        </div>
+        <div class="settings_container">
+          <div class="settings_settings" id="settings_placeholder">
+        </div>
+      </div>
+      </div> 
+    </section>
+
+    <div id="tabs" style="display: none;">
+      <ul>
+        <li><a href="#tabs-1">SERVICES</a></li>
+        <li><a href="#tabs-2">SYSTEM</a></li>
+        <li><a href="#tabs-3">POSITION</a></li>
+        <li><a href="#tabs-4">INCOMING</a></li>
+        <li><a href="#tabs-5">OUTGOING</a></li>          
+        <li><a href="#tabs-6">SETTINGS</a></li>
+        <li><a href="#tabs-7">LOGS</a></li>
+        <li><a href="#tabs-8">DATABASE</a></li>
+        <li><a href="#tabs-9">MAP</a></li>
+      </ul>
+      <div id="tabs-1">            
+      </div>
+      <div id="tabs-2">
+        <p>disk space, memory usage, cpu temp, restart</p>
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+      <div id="tabs-3">
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+      <div id="tabs-4">
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+      <div id="tabs-5">          
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+      <div id="tabs-6">
+        <div class="tab-content"></div>
+      </div>
+      <div id="tabs-7">
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+      <div id="tabs-8">
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+        <p>Table  Columns   Rows</p>
+        <p>Services  4      5</p>
+        <p>Setting  8      356</p>
+        <p>Data directory:</p>
+      </div>
+      <div id="tabs-9">
+        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
+        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
