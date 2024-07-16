@@ -1,5 +1,5 @@
 param(
-    [string]$GPS_SETTINGS_FILE_NAME = "./settings.json",
+    [string]$SETTINGS_FILE_NAME = "./settings.json",
     [string]$ENV_FILE_NAME = "./.env"
 )
 
@@ -8,7 +8,7 @@ Write-Host ""
 
 Write-Host "Script variables:"
 Write-Host ""
-Write-Host "`$GPS_SETTINGS_FILE_NAME: `"$GPS_SETTINGS_FILE_NAME`""
+Write-Host "`$SETTINGS_FILE_NAME: `"$SETTINGS_FILE_NAME`""
 Write-Host "`$ENV_FILE_NAME: `"$ENV_FILE_NAME`""
 Write-Host ""
 Write-Host "Generating `"$ENV_FILE_NAME`""
@@ -59,5 +59,4 @@ function Invoke-GenerateDockerEnv {
     }
 }
 
-Invoke-GenerateDockerEnv -settings_file $GPS_SETTINGS_FILE_NAME -output_file ./.env
-
+Invoke-GenerateDockerEnv -settings_file $SETTINGS_FILE_NAME -output_file ./.env

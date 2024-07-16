@@ -201,28 +201,22 @@ services:
   db:
     env_file:
       - ".env"
-    build:
-      context: .
-      dockerfile: ./db/Dockerfile
-    image: "db"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "10"
+    environment:
+      - MYSQL_DATABASE=${DB_MYSQL_DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_MYSQL_PASSWORD}
+      - MYSQL_PASSWORD=${DB_MYSQL_PASSWORD}
+      - MYSQL_USER=${DB_MYSQL_USER}
+    image: mysql
     labels:
       - autoheal=true
       - "ham_docker_container_name=${DB_MYSQL_SERVICE_NAME}"
     ports:
       - ${DB_MYSQL_PORT}:${DB_PRIV_MYSQL_PORT}
-    volumes:
-      - ${DB_MYSQL_DATA_DIR}:${DB_PRIV_MYSQL_DATA_DIR}
-      - ./settings.json:${DB_PRIV_SETTINGS_FILE_NAME}
     healthcheck:
-      test: ["CMD", "pwsh", "-ExecutionPolicy", "Bypass", "-File", "/healthcheck.ps1"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 10s
       start_period: 60s
-      retries: 1
+      retries: 5
       timeout: 20s
     networks: 
       - db_network

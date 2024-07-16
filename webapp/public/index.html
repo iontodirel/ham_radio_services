@@ -51,7 +51,6 @@
         localStorage.setItem("lastTab", targetId);                
       });
 
-
       // on load, unmark all active sections
       // then select a section based on the local storage data
       const lastTab = localStorage.getItem("lastTab");
@@ -64,15 +63,15 @@
 
     $(function() {
       $(document).tooltip({
-       position: {
-         my: "left top",
-         at: "top-2"
-       },
-       content: function() {
-        // Reference the element that triggered the tooltip using "this"
-         const title = $(this).attr('title');
-         return `<b>${title}</b>`;
-       }
+        position: {
+          my: "left top",
+          at: "top-2"
+        },
+        content: function() {
+          // Reference the element that triggered the tooltip using "this"
+          const title = $(this).attr('title');
+          return `<b>${title}</b>`;
+        }
       });
     });
   </script>
