@@ -1,3 +1,10 @@
+// **************************************************************** //
+// ham_docker_container - Containers for APRS and ham radio         //
+// Version 0.1.0                                                    //
+// https://github.com/iontodirel/ham_docker_container               //
+// Copyright (c) 2023 Ion Todirel                                   //
+// **************************************************************** //
+
 const Express = require('express')
 const Docker = require('dockerode');
 const FS = require('fs');
@@ -616,7 +623,6 @@ async function isServiceAvailable(serviceName) {
 
 async function enableOrDisableService(serviceName, state) {
   try {
-    //const [results,] = 
     const results = await databasePool.query(`
       UPDATE setting
       SET value = ?

@@ -279,7 +279,7 @@ services:
     ports:
       - ${WEBAPP_PORT}:${WEBAPP_PORT}
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${WEBAPP_PORT}"]
       interval: 30s
       start_period: 30s
       retries: 1

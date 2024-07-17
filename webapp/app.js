@@ -1,3 +1,10 @@
+// **************************************************************** //
+// ham_docker_container - Containers for APRS and ham radio         //
+// Version 0.1.0                                                    //
+// https://github.com/iontodirel/ham_docker_container               //
+// Copyright (c) 2023 Ion Todirel                                   //
+// **************************************************************** //
+
 const express = require('express')
 const path = require('path');
 const axios = require('axios');
