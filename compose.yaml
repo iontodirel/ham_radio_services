@@ -210,6 +210,8 @@ services:
     labels:
       - autoheal=true
       - "ham_docker_container_name=${DB_MYSQL_SERVICE_NAME}"
+    volumes:
+      - ${DB_MYSQL_DATA_DIR}:${DB_PRIV_MYSQL_DATA_DIR}
     ports:
       - ${DB_MYSQL_PORT}:${DB_PRIV_MYSQL_PORT}
     healthcheck:

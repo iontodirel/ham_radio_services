@@ -54,7 +54,8 @@ async function initDbSchema() {
       CREATE TABLE IF NOT EXISTS service (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(50) NOT NULL,
-        UNIQUE KEY uk_service_name (name)
+        UNIQUE KEY uk_service_name (name),
+        INDEX idx_service_name (name)
       )
     `);
     await databasePool.query(`
@@ -68,8 +69,22 @@ async function initDbSchema() {
         description VARCHAR(250),
         editable VARCHAR(10) DEFAULT 'false',
         FOREIGN KEY (service_id) REFERENCES service(id),
-        INDEX idx_setting_service_id (service_id),
         INDEX idx_setting_service_id_name (service_id, name)
+      )
+    `);
+    // TODO: change date_time to date_time_utc
+    await databasePool.query(`
+      CREATE TABLE IF NOT EXISTS health (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        service_id INT,
+        status VARCHAR(10) NOT NULL,
+        text VARCHAR(250),
+        date_time DATETIME,
+        uptime INT,
+        FOREIGN KEY (service_id) REFERENCES service(id),
+        INDEX idx_health_date_time (date_time),
+        INDEX idx_health_service_id (service_id),
+        INDEX idx_health_uptime (uptime)
       )
     `);
     console.log('Database and tables created successfully.');
@@ -134,6 +149,7 @@ async function testDbQuery() {
   }
   await initDbSchema();
   await populateSettingsInDb(settingsFileName);
+  await beginUpdateServiceHealth();
 })();
 
 // **************************************************************** //
@@ -141,6 +157,18 @@ async function testDbQuery() {
 // ROUTES                                                           //
 //                                                                  //
 // **************************************************************** //
+
+app.get('/api/v1/services/health/clear', async (req, res) => {
+  try {
+    await clearHealthHistory();
+    res.json({ 'success': 'true' });
+  }
+  catch (error) {
+    console.error('Error occurred:', error);
+    res.status(500).json({ 'error': 'Failed to call clearHealthHistory' });
+  }
+  console.log(`Calling /api/v1/services/health/clear`);
+});
 
 app.get('/api/v1/services/:verb?', async (req, res) => {
   const { verb } = req.params;
@@ -153,10 +181,11 @@ app.get('/api/v1/services/:verb?', async (req, res) => {
       results = await retrieveSettingsForAllServices();
     }
     else if (verb === "health") {
-      const fromDate = req.query.from ? new Date(req.query.from) : convertToUtcDate(new Date(1900, 0, 1));
-      const toDate = req.query.to ? new Date(req.query.to) : convertToUtcDate(new Date());
-      const count = req.query.count ? parseInt(req.query.count) : 10;
-      results = await retrieveServiceHealthHistoryByDate(fromDate, toDate, count);
+      const fromDate = req.query.from ? convertToUtcDate(new Date(req.query.from)) : convertToUtcDate(new Date(1900, 0, 1));
+      const toDate = req.query.to ? convertToUtcDate(new Date(req.query.to)) : convertToUtcDate(new Date());
+      const count = req.query.count ? parseInt(req.query.count) : 1000000;
+      const view = req.query.view ?? 'day';
+      results = await getServiceHealthHistoryTiles(fromDate, toDate, count, view);
     }
     else if (verb === "restart") {
       const ignoreList = (req.query.ignore ?? '').split(',');
@@ -171,7 +200,7 @@ app.get('/api/v1/services/:verb?', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(jsonStr);
   }
-  catch (err) {
+  catch (error) {
     console.error('Error occurred:', error);
     res.status(500).json({ 'error': 'Failed to retrieve services status' });
   }
@@ -186,7 +215,7 @@ app.get('/api/v1/services/:verb?', async (req, res) => {
 app.get('/api/v1/service/:name/:verb/:setting?', async (req, res) => {
   const { name, verb, setting } = req.params;
 
-  const logMessage = setting !== undefined
+  const logMessage = (setting !== undefined)
     ? `Calling /api/v1/service/${name}/${verb}/${setting}`
     : `Calling /api/v1/service/${name}/${verb}`;
   console.log(logMessage);
@@ -711,10 +740,19 @@ function convertToUtcDate(date) {
   return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
 }
 
+function convertToLocalDate(dateUtc) {
+  const localDate = new Date(dateUtc.getTime() - dateUtc.getTimezoneOffset() * 60000);
+  return localDate;
+}
+
 function formatDateToYYYYMMDDHHmmss(date) {
-  const momentDate = moment(date);
-  const YYYYMMDDHHmmss = momentDate.format('YYYY-MM-DD HH:mm:ss');
-  return YYYYMMDDHHmmss;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 function restartSystem() {
@@ -725,4 +763,285 @@ function restartSystem() {
       console.log('Restarting the system:', stdout);
     }
   });
+}
+
+// **************************************************************** //
+//                                                                  //
+// HEALTH                                                           //
+//                                                                  //
+// **************************************************************** //
+
+async function beginUpdateServiceHealth() {
+  try {
+    await updateServiceHealth();
+    setInterval(async () => {
+      try {
+        await updateServiceHealth();
+      } catch (err) {
+        console.error('Error updating service health:', err);
+      }
+    }, 30000); // 30000 milliseconds = 30 seconds
+  }
+  catch (err) {
+    console.error('Error updating service health:', err);
+  }
+}
+
+async function updateServiceHealth() {
+  const services = await retrieveServicesStatus();
+
+  const currentDate = new Date();
+  const currentUtcDate = convertToUtcDate(currentDate);
+
+  for (const service of services) {
+    try {
+      const previousHealthData = await getDbLastServiceHealthUpdate(service.name);
+      const uptimeDiffSeconds = service.uptimeSeconds - previousHealthData.uptime;
+      const startDiffSeconds = (convertToUtcDate(new Date()) - new Date(previousHealthData.dateTime)) / 1000;
+
+      let status = 'red';
+      if (service.status === 'running' && service.healthStatus === 'healthy' && 
+          service.running === 'true' && service.statusColor === 'green') {
+        status = 'green';
+      }
+      if (startDiffSeconds <= 60 && (uptimeDiffSeconds < 0 || uptimeDiffSeconds > 60)) {
+        status = 'red';
+      }
+
+      await updateDbServiceHealthData(service.name, status, '', currentUtcDate, service.uptimeSeconds);
+    } catch (err) {
+      throw err;
+    }
+  }
+}
+
+async function getDbLastServiceHealthUpdate(serviceName) {
+  try {
+    const results = await databasePool.query(`
+      SELECT uptime, date_time
+      FROM health
+      INNER JOIN service ON health.service_id = service.id
+      WHERE service.name = ?
+      ORDER BY health.date_time DESC
+      LIMIT 1;`, [serviceName]);
+
+    const uptime = results[0]?.[0]?.uptime ?? 0;
+    const dateTime = results[0]?.[0]?.date_time ?? 0;
+
+    return { uptime: uptime, dateTime: dateTime };
+  } catch (err) {
+    console.error(`Error inserting health data for service ${serviceName}: ${err.message}`);
+    throw err;
+  }
+}
+
+async function updateDbServiceHealthData(serviceName, status, text, dateTime, uptime) {
+  try {
+    const formattedDateTime = formatDateToYYYYMMDDHHmmss(dateTime);
+
+    const results = await databasePool.query(`
+      INSERT INTO health (service_id, status, text, date_time, uptime)
+      SELECT id, ?, ?, ?, ?
+      FROM service
+      WHERE name = ?
+      LIMIT 1;`, [status, text, formattedDateTime, uptime, serviceName]);
+
+    if (results.affectedRows === 0) {
+      throw new Error(`Service with name '${serviceName}' not found or insert unsuccessful.`);
+    }
+  } catch (err) {
+    console.error(`Error inserting health data for service ${serviceName}: ${err.message}`);
+    throw err;
+  }
+}
+
+async function clearHealthHistory() {
+  try {
+    await databasePool.query('DELETE FROM health;');
+    console.log('Deleted all data from the health table.');
+  } catch (error) {
+    console.error('Error deleting rows from health table:', error);
+  }
+}
+
+async function retrieveServiceHealthHistory(fromDate, toDate, maxCount, pivot = 'bottom') {
+  try {
+    const [distinctaServiceCountResults, ] = await databasePool.query(`SELECT COUNT(DISTINCT service_id) AS distinct_service_count FROM health;`);
+
+    const multiplier = distinctaServiceCountResults[0]?.distinct_service_count ?? 1;
+    const maxCountAdjusted = maxCount * multiplier;
+
+    const fromDateString = formatDateToYYYYMMDDHHmmss(fromDate);
+    const toDateString = formatDateToYYYYMMDDHHmmss(toDate);
+
+    const sortDirection = (pivot == 'bottom') ? 'DESC' : ((pivot == 'top') ? 'ASC' : 'DESC');
+
+    // Can add filter by service name if needed:
+    //
+    // WHERE service_id = (SELECT id FROM service WHERE name = ?)
+    // AND date_time BETWEEN ? AND ?
+
+    let start = Date.now();
+
+    const [healthResults, ] = await databasePool.query(`
+      SELECT h.*, s.name as service_name
+      FROM health h
+      JOIN service s ON h.service_id = s.id
+      WHERE h.date_time BETWEEN ? AND ?
+      ORDER BY h.date_time ${sortDirection}
+      LIMIT ?;
+    `, [fromDateString, toDateString, maxCountAdjusted]);
+    
+    let end = Date.now();
+    const dbQueryElapsedMs = (end - start);
+
+    console.log(`Performance: Database health query completed in ${dbQueryElapsedMs}ms`);
+
+    let dateTimeUtcDbString = '';
+    let dateTimeUtc = new Date();
+    let dateTime = new Date(); 
+    let dateTimeUtcString = '';
+    let dateTimeString = ''; 
+
+    start = Date.now();
+
+    const results = healthResults.map((row, ) => {
+      // creating Date objects and formatting dates
+      // are expensive operations, cache them as each service
+      // health log will have the same date saving ~8 times the cost
+      if (dateTimeUtcDbString !== row.date_time) {
+        dateTimeUtcDbString = row.date_time;
+        dateTimeUtc = new Date(row.date_time);
+        dateTime = convertToLocalDate(dateTimeUtc); 
+        dateTimeUtcString = formatDateToYYYYMMDDHHmmss(dateTimeUtc);
+        dateTimeString = formatDateToYYYYMMDDHHmmss(dateTime);
+      }
+
+      return {
+        status: row.status,
+        dateTimeUtc: dateTimeUtcString,
+        dateTime: dateTimeString,
+        uptime: row.uptime,
+        name: row.service_name
+    }});
+
+    end = Date.now();
+    const dbDataProcessingElapsedMs = (end - start);
+    console.log(`Performance: Health query map completed in ${dbDataProcessingElapsedMs}ms`);
+
+    return {
+      dbQueryElapsedMs: dbQueryElapsedMs,
+      dbDataProcessingElapsedMs: dbDataProcessingElapsedMs,
+      results: results
+    };
+  } catch (error) {
+    console.error("Error retrieving service historical health:", error);
+    throw error;
+  }
+}
+
+function generateTileDataByView(fromDate, toDate, byDateServiceHealthData, view = 'day') {
+  const viewPeriods = {
+    'day': 60,
+    'week': 600,
+    'month': 3600,
+    'year': 21600
+  };
+  
+  let periodSeconds = viewPeriods[view] || 1;
+
+  let data = {    
+    tileCount: 0,
+    periodSeconds: periodSeconds,
+    view: view,
+    fromDateUtc: formatDateToYYYYMMDDHHmmss(fromDate),    
+    tileGenerationElapsedMs: 0,
+    dbQueryElapsedMs: 0,
+    dbDataProcessingElapsedMs: 0,
+    tiles: []
+  };
+
+  let tileDate = new Date(fromDate);
+  let lastIndex = 0; 
+  let index = 0;
+  while (true) {
+    if (tileDate.getTime() > toDate.getTime())
+    {
+      break;
+    }
+
+    let tile = {
+      index: index,
+      date: formatDateToYYYYMMDDHHmmss(convertToLocalDate(tileDate)),
+      dateUtc: formatDateToYYYYMMDDHHmmss(tileDate),
+      color: 'gray',
+      entries: []
+    };
+
+    const healthState = pickTimeMatchingHealthState(tileDate, byDateServiceHealthData, lastIndex, periodSeconds);
+      
+    lastIndex = healthState.lastIndex;
+      
+    if (healthState.success) {
+      tile.color = healthState.color;
+      if (healthState.color === 'red') {
+        tile.entries.push(...healthState.entries);
+      }
+    }
+
+    data.tiles.push(structuredClone(tile));
+      
+    tileDate.setSeconds(tileDate.getSeconds() + periodSeconds);
+
+    index++;
+  }
+
+  data.tileCount = index;
+
+  return data;  
+}
+
+async function getServiceHealthHistoryTiles(fromDate, toDate, count, view) {
+  const healthHistory = await retrieveServiceHealthHistory(fromDate, toDate, count, 'top');
+  const start = Date.now();
+  let result = generateTileDataByView(fromDate, toDate, healthHistory.results, view);
+  const end = Date.now();
+  const elapsedMs = (end - start);
+  console.log(`Performance: Generated tiles completed in ${elapsedMs}ms`);
+  result.tileGenerationElapsedMs = elapsedMs;
+  result.dbQueryElapsedMs = healthHistory.dbQueryElapsedMs;
+  result.dbDataProcessingElapsedMs = healthHistory.dbDataProcessingElapsedMs;
+  return result;
+}
+
+function pickTimeMatchingHealthState(tileDate, sortedHealthData, index, periodSeconds) {
+  let result = {
+    lastIndex: index,
+    color: 'gray',
+    entries: [],
+    success: false
+  };
+  
+  if (sortedHealthData.length > 0) {
+    const entry = sortedHealthData[0];
+    const timeDifferenceSeconds = getDateTimeDifferenceInSeconds(new Date(entry.dateTimeUtc), tileDate);
+    if (timeDifferenceSeconds > periodSeconds) {
+      return result;
+    }
+  }
+
+  for (let i = index; i < sortedHealthData.length; i++) {
+    const entry = sortedHealthData[i];
+    const timeDifferenceSeconds = getDateTimeDifferenceInSeconds(new Date(entry.dateTimeUtc), tileDate);
+    if (timeDifferenceSeconds > 0 && timeDifferenceSeconds <= periodSeconds) {
+      result.lastIndex = i;
+      result.entries.push(entry);
+      result.success = true;
+      result.color = (result.color === 'gray' || result.color === 'green') ? entry.status : result.color;
+    }
+    else if (result.success) {
+      break;
+    }
+  }
+  return result;
 }

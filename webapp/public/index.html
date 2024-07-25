@@ -10,13 +10,12 @@
   <script src="/script.js"></script>
   <script>
     $( function() {
-      $( "#tabs" ).tabs({
-        active: 0
-      }).find('.ui-tabs-nav')
-        .find('li')
-            .css('display','inline-block')
-            .css('float','none')
-            .css('vertical-align','bottom');
+      $( "#healthDate" ).datepicker({
+        firstDay: 1,
+        showButtonPanel: true,
+        changeMonth: true,
+        changeYear: true
+      }).datepicker('setDate', new Date());
     });
 
     $(document).ready(function() {
@@ -29,7 +28,7 @@
         e.stopPropagation(); 
       });
     
-      $('.close-icon').click(function(){
+      $('.menu-close-icon').click(function(){
           $('.menu').fadeOut();
       });
 
@@ -48,7 +47,7 @@
         $(target).addClass('active');
 
         var targetId = $(this).attr("href").substring(1); // Remove leading '#'
-        localStorage.setItem("lastTab", targetId);                
+        localStorage.setItem("lastTab", targetId);
       });
 
       // on load, unmark all active sections
@@ -63,6 +62,7 @@
 
     $(function() {
       $(document).tooltip({
+        track: true,
         position: {
           my: "left top",
           at: "top-2"
@@ -71,6 +71,12 @@
           // Reference the element that triggered the tooltip using "this"
           const title = $(this).attr('title');
           return `<b>${title}</b>`;
+        },
+        show: {
+          duration: 300
+        },
+        hide: {
+          duration: 20
         }
       });
     });
@@ -78,10 +84,10 @@
   <script>
     window.onload = async function() {
       await initConfig();
-      await initializeAndPopulateServicesTable();      
-      await beginUpdateServicesTable();
-      await retrieveAndPopulateServiceSettings();
-      await testCppWebSocket();    
+      await retrieveAndPopulateServicesTableAndTiles();      
+      await beginUpdateServicesTableAndTiles();
+      await retrieveAndPopulateServicesSettings();
+      await initHealth();
     }
   </script>
   <script>
@@ -108,13 +114,13 @@
   <div class="container">
 
     <div class="menu-icon">
-      <div class="line"></div>
-      <div class="line"></div>
-      <div class="line"></div>
+      <div class="menu-line"></div>
+      <div class="menu-line"></div>
+      <div class="menu-line"></div>
     </div>  
 
     <nav class="menu">
-      <div class="close-icon">&times;</div>
+      <div class="menu-close-icon">&times;</div>
       <ul>
         <li><a href="#services2" class="nav-link">SERVICES</a></li>
         <li><a href="#system" class="nav-link">SYSTEM</a></li>
@@ -148,7 +154,7 @@
           <option value="option1">Winlink</option>
           <option value="option4">AX.25</option>
         </select>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <label style="font-weight: bold;">Send Count/Interval:</label>
         <select style="width: 100%">
           <option value="option2">Five (1s, 4s, 10s, 30s, 60s)</option>
@@ -156,23 +162,23 @@
           <option value="option4">Three (1s, 10s, 30s)</option>
           <option value="option3">Five (1s, 10s, 30s, 60s, 120s)</option>
         </select>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <label style="font-weight: bold;">Path:</label>
         <input type="text" name="product" list="productName" style="width: 100%" value="WIDE1-1, WIDE2-2" />
         <datalist style="width: 100%" id="productName">
           <option>WIDE1-1, WIDE2-2</option>
           <option>WIDE1-1, WIDE2-1</option>
         </datalist>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <label style="font-weight: bold;">From:</label>
         <input style="width: 100%;" value="N0CALL-0" />
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <label style="font-weight: bold;">To:</label>
         <input style="width: 100%;" value="N0CALL-5" />
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <label style="font-weight: bold;">Message:</label>
         <textarea style="width: 100%; resize: none;" maxlength="100" rows="4" required>hello world</textarea>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <button style="float: right;" onclick="">Send Message</button>
     
         <div>
@@ -187,32 +193,32 @@
         <div>
           The services listed below can each be <i><b>disabled</b></i>, <i><b>enabled</b></i>, or <i><b>restarted</b></i> as needed.
         </div>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <div>
           When a service is disabled, it initially transitions to an <i>unhealthy</i> state before restarting and awaiting re-enablement. Following a service disable action, it is expected that the service will briefly appear as <i>unhealthy</i>.
         </div>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <div>
           <b>The services</b> state is automatically updated <i>typically</i> every 5 seconds.
         </div>
-        <div class="spacer"></div>
-        <div style="display: flex; justify-content: center; align-items: center;">
-          <table class="services" id="services">
+        <div class="vertical-spacer"></div>
+        <div class="services-table-container">
+          <table class="services-table" id="services">
             <thead>
-              <th class="services-th-td">Name</th>
-              <th class="services-th-td">Status</th>
-              <th class="services-th-td">Start Date (UTC)</th>
-              <th class="services-th-td">Uptime</th>
-              <th class="services-th-td">Enable</th>
-              <th class="services-th-td">Disable</th>
-              <th class="services-th-td">Restart</th>
+              <th class="services-table-th-td">Name</th>
+              <th class="services-table-th-td">Status</th>
+              <th class="services-table-th-td">Start Date (UTC)</th>
+              <th class="services-table-th-td">Uptime</th>
+              <th class="services-table-th-td">Enable</th>
+              <th class="services-table-th-td">Disable</th>
+              <th class="services-table-th-td">Restart</th>
             </thead>
             <tbody id="serviceBody">
             </tbody>
           </table>    
         </div>
       
-        <div id="serviceSmall" class="tile-container">
+        <div id="serviceSmall" class="service-tile-container">
         </div>
       
         <p>The services perform self <b>health checks</b> every 10 seconds. These checks typically include verifying database
@@ -221,9 +227,40 @@
           fails its health check, it will automatically restart.</p>
         <p>Most services depend on the <b>web service</b>. The database is used for telemetry, settings, incoming and outgoing
           APRS traffic, statistics, etc.</p>
-        <p>When restarting all services, the <b>db</b> and <b>svc_control_ws</b> services won't be restarted. But they can be
-          restarted in the services table above.</p>
+        <p>When restarting all services, the <b>db</b> and <b>web service</b> services won't be restarted. But they can be
+          restarted individually in the services table above.</p>
         <p><b style="color:red">Restart all services:</b> <button onclick="handleRestartAllServicesButtonClick()">Restart All</button></p>
+        <p><b>Service health</b> is recorded every 30 seconds and can be explored below.</p>
+        
+        <span>Window:</span>
+        <select id="healthView">
+          <option value="day">Day (1m)</option>
+          <option value="week">Week (10m)</option>
+          <option value="month">Month (1hr)</option>
+          <option value="year">Year (6hr)</option>
+        </select>
+        <span style="margin-left: 10px;"></span>
+        <span>Date:</span>
+        <input type="text" style="width: max-content;" id="healthDate">
+        <span style="margin-left: 10px;"></span>
+        <p>Use current date: <input type="checkbox" style="width: max-content;" id="healthSyncDateWithWindow"></p>          
+        
+        <p>Range: <span id="healthEventDateRange">n/a</span></p>
+        <p>Event: <span id="healthEventDate">n/a</span></p>
+
+        <div class="spinner-container">
+          <div class="spinner"></div>
+        </div>
+
+        <div class="health-outer-container">
+          <div class="health-container" id="healthContainer">
+          </div>
+        </div>
+      </div>
+
+      <div id="dialog" title="Health Status" style="display: none;">
+        <span id="dialogContent" tabindex="0"></span>
+        <p>This is the default dialog which is useful for displaying information. The dialog window can be moved, resized and closed with the 'x' icon.</p>
       </div>
     </section>
 
@@ -235,10 +272,10 @@
       <div class="section_header">POSITION</div>
       <div class="tab-content">
         <div><i>If available</i> a GNSS device provides time and position information.</div>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <div style="font-weight: normal;">Copy DD coordinates: <button onclick="">Copy to Clipboard</button></div>
         <div style="font-weight: normal;">Copy DDM coordinates: <button onclick="">Copy to Clipboard</button></div>
-        <div class="spacer"></div>
+        <div class="vertical-spacer"></div>
         <div style="display: flex;">
           <label style="flex: 0 0 150px; font-weight: bold; width: 150px; text-align: right; padding-right: 10px; user-select: none; word-break: break-all; overflow-wrap: break-word;">UTC Time:</label> 
           <div class="position-value" style="flex: 1;" data-context="utc-time">12:32:10PM 5/30/2024</div>
@@ -331,80 +368,28 @@
       <div class="tab-content">  
         <div style="margin-bottom: 0px;">
           The settings are read-only. <b>If you like to change the settings</b>, edit the settings.json file directly, and rebuild and re-create the Docker containers.
-          <div class="spacer"></div>
+          <div class="vertical-spacer"></div>
           This page displays various service settings. If a service setting is marked as <i>visible</i> and <i>editable</i>, it will appear in this list.
-          <div class="spacer"></div>
+          <div class="vertical-spacer"></div>
           You can change the contents of the settings.json file if you would like more settings to appear in this list by setting <i>visible</i> and <i>editable</i> to '<i>true</i>'.
           <p><b>Refresh settings:</b> <button onclick="handleRefreshSettings()">Refresh All</button></p> 
           <!-- Use this page to set various service settings. If a service setting is marked as <i>visible</i> and <i>editable</i>, it will appear in this list.
           You can change the contents of the settings.json file if you would like more settings to appear in this list by setting <i>visible</i> and <i>editable</i> to '<i>true</i>'.
-          <div class="spacer"></div>
+          <div class="vertical-spacer"></div>
           <b>Please be careful as you make changes</b>, incorrect settings migh cause the system to become offline or inaccessible.
-          <div class="spacer"></div>
+          <div class="vertical-spacer"></div>
           Saving or Resetting the settings will not apply them, you might need to rebuild and recreate the Docker containers.
           <p><b style="color:red">Save settings:</b> <button onclick="handleSaveSettings()">Save All</button></p>
           <p><b style="color:red">Reset settings:</b> <button onclick="handleSaveSettings()">Reset All</button></p>
           <p><b>Refresh settings:</b> <button onclick="handleRefreshSettings()">Refresh All</button></p> -->
-          <!-- <div class="spacer"></div>              -->
+          <!-- <div class="vertical-spacer"></div>-->
         </div>
-        <div class="settings_container">
-          <div class="settings_settings" id="settings_placeholder">
+        <div class="settings-container">
+          <div class="settings-settings" id="settingsPlaceholder">
         </div>
       </div>
       </div> 
     </section>
-
-    <div id="tabs" style="display: none;">
-      <ul>
-        <li><a href="#tabs-1">SERVICES</a></li>
-        <li><a href="#tabs-2">SYSTEM</a></li>
-        <li><a href="#tabs-3">POSITION</a></li>
-        <li><a href="#tabs-4">INCOMING</a></li>
-        <li><a href="#tabs-5">OUTGOING</a></li>          
-        <li><a href="#tabs-6">SETTINGS</a></li>
-        <li><a href="#tabs-7">LOGS</a></li>
-        <li><a href="#tabs-8">DATABASE</a></li>
-        <li><a href="#tabs-9">MAP</a></li>
-      </ul>
-      <div id="tabs-1">            
-      </div>
-      <div id="tabs-2">
-        <p>disk space, memory usage, cpu temp, restart</p>
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-      <div id="tabs-3">
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-      <div id="tabs-4">
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-      <div id="tabs-5">          
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-      <div id="tabs-6">
-        <div class="tab-content"></div>
-      </div>
-      <div id="tabs-7">
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-      <div id="tabs-8">
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-        <p>Table  Columns   Rows</p>
-        <p>Services  4      5</p>
-        <p>Setting  8      356</p>
-        <p>Data directory:</p>
-      </div>
-      <div id="tabs-9">
-        <p>Mauris eleifend est et turpis. Duis id erat. Suspendisse potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim commodo pellentesque. Praesent eu risus hendrerit ligula tempus pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a, lacus.</p>
-        <p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at, semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra justo vitae neque. Praesent blandit adipiscing velit. Suspendisse potenti. Donec mattis, pede vel pharetra blandit, magna ligula faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque. Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean vehicula velit eu tellus interdum rutrum. Maecenas commodo. Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae lectus hendrerit hendrerit.</p>
-      </div>
-    </div>
   </div>
 </body>
 </html>

@@ -16,8 +16,8 @@ const port = process.env.WEBAPP_PORT || 8081
 app.get('/config', (req, res) => {
   res.json(
     {
-      httpPort: process.env.SVC_CONTROL_WS_REST_PORT,
-      wsPort: process.env.SVC_CONTROL_WS_WS_PORT
+      httpPort: process.env.SVC_CONTROL_WS_REST_PORT || 3002,
+      wsPort: process.env.SVC_CONTROL_WS_WS_PORT || 3003
     });
 });
 
