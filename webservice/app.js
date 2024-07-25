@@ -181,7 +181,7 @@ app.get('/api/v1/services/:verb?', async (req, res) => {
       results = await retrieveSettingsForAllServices();
     }
     else if (verb === "health") {
-      const fromDate = req.query.from ? convertToUtcDate(new Date(req.query.from)) : convertToUtcDate(new Date(1900, 0, 1));
+      const fromDate = req.query.from ? convertToUtcDate(new Date(req.query.from)) : convertToUtcDate(new Date());
       const toDate = req.query.to ? convertToUtcDate(new Date(req.query.to)) : convertToUtcDate(new Date());
       const count = req.query.count ? parseInt(req.query.count) : 1000000;
       const view = req.query.view ?? 'day';
@@ -964,7 +964,8 @@ function generateTileDataByView(fromDate, toDate, byDateServiceHealthData, view 
   let tileDate = new Date(fromDate);
   let lastIndex = 0; 
   let index = 0;
-  while (true) {
+  let maxTiles = 2000;
+  while (index < maxTiles) {
     if (tileDate.getTime() > toDate.getTime())
     {
       break;
@@ -981,13 +982,13 @@ function generateTileDataByView(fromDate, toDate, byDateServiceHealthData, view 
     const healthState = pickTimeMatchingHealthState(tileDate, byDateServiceHealthData, lastIndex, periodSeconds);
       
     lastIndex = healthState.lastIndex;
-      
+
     if (healthState.success) {
       tile.color = healthState.color;
       if (healthState.color === 'red') {
         tile.entries.push(...healthState.entries);
       }
-    }
+    }    
 
     data.tiles.push(structuredClone(tile));
       
